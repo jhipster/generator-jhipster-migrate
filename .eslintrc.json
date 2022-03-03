@@ -1,0 +1,19 @@
+{
+  "env": {
+    "node": true,
+    "es2022": true
+  },
+  "extends": ["eslint:recommended", "xo", "plugin:prettier/recommended"],
+  "parserOptions": {
+    "ecmaVersion": 13,
+    "sourceType": "module"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.spec.{c,m,}js", "test/**/*.{c,m,}js"]
+    }
+  ],
+  "rules": {
+    "no-await-in-loop": "off"
+  }
+}

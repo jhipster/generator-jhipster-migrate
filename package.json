@@ -1,0 +1,77 @@
+{
+  "name": "generator-jhipster-migrate",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Migrate Project",
+  "keywords": [
+    "yeoman-generator",
+    "jhipster-blueprint",
+    "jhipster-8"
+  ],
+  "license": "UNLICENSED",
+  "type": "module",
+  "bin": {
+    "jhipster-migrate": "cli/cli.cjs"
+  },
+  "files": [
+    "cli",
+    "generators"
+  ],
+  "scripts": {
+    "ejslint": "ejslint generators/**/*.ejs",
+    "esmocha": "esmocha generators --no-insight --forbid-only",
+    "lint": "eslint .",
+    "lint-fix": "npm run ejslint && npm run lint -- --fix",
+    "mocha": "mocha generators --no-insight --forbid-only",
+    "prepare": "husky install",
+    "prettier-check": "prettier --check \"{,**/}*.{md,json,yml,html,js,ts,tsx,css,scss,vue,java}\"",
+    "prettier-format": "prettier --write \"{,**/}*.{md,json,yml,html,js,ts,tsx,css,scss,vue,java}\"",
+    "prettier:check": "prettier --check \"{,src/**/}*.{md,json,yml,html,js,ts,tsx,css,scss,vue,java}\"",
+    "prettier:format": "prettier --write \"{,src/**/}*.{md,json,yml,html,js,ts,tsx,css,scss,vue,java}\"",
+    "pretest": "npm run prettier-check && npm run lint",
+    "test": "vitest run",
+    "update-snapshot": "vitest run --update",
+    "vitest": "vitest"
+  },
+  "dependencies": {
+    "@yeoman/namespace": "^1.0.0",
+    "chalk": "^5.2.0",
+    "generator-jhipster": "8.0.0",
+    "globby": "^13.2.2",
+    "latest-version": "^7.0.0",
+    "libnpmexec": "^7.0.3",
+    "ora": "^6.1.0",
+    "p-transform": "^4.1.5",
+    "parse-gitignore": "^2.0.0",
+    "readable-stream": "^4.4.2",
+    "registry-url": "^6.0.1",
+    "semver": "^7.3.5",
+    "simple-git": "^3.20.0",
+    "untildify": "^5.0.0"
+  },
+  "devDependencies": {
+    "ejs-lint": "2.0.0",
+    "eslint": "8.52.0",
+    "eslint-config-airbnb-base": "15.0.0",
+    "eslint-config-prettier": "9.0.0",
+    "eslint-config-xo": "0.43.1",
+    "eslint-plugin-import": "2.29.0",
+    "eslint-plugin-mocha": "10.0.3",
+    "eslint-plugin-prettier": "5.0.1",
+    "esmocha": "1.0.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.2",
+    "lodash-es": "^4.17.21",
+    "prettier": "3.0.3",
+    "prettier-plugin-packagejson": "^2.4.3",
+    "vitest": "0.34.6",
+    "yeoman-assert": "^3.1.1",
+    "yeoman-test": ">=8.0.0-rc.1"
+  },
+  "engines": {
+    "node": "^18.13.0 || >= 20.6.1"
+  },
+  "cacheDirectories": [
+    "node_modules"
+  ]
+}
