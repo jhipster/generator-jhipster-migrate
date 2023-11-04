@@ -13,6 +13,6 @@ jobs:
         with:
           node-version: 18
           cache: 'npm'
-      - run: git config --global user.name "JHipster Bot"; git config --global user.email "jhipster-bot@jhipster.tech"
+      - run: git config --global user.name "JHipster Bot"; git config --global user.email "jhipster-bot@jhipster.tech"; git config --global init.defaultBranch main
       - run: npm ci
       - run: npm run test
