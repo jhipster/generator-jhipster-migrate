@@ -262,8 +262,11 @@ export default class extends BaseGenerator {
       async assertNoLocalChanges() {
         const result = await this.createGit().status();
         if (!result.isClean()) {
-          this.log.warn(result.files.map(file => `${file.index} ${file.path}`));
-          throw new Error(' local changes found.\n\tPlease commit/stash them before upgrading');
+          throw new Error(
+            ` local changes found.\n\tPlease commit/stash them before upgrading\n\t${result.files
+              .map(file => `${file.index} ${file.path}`)
+              .join('\n\t')}`,
+          );
         }
       },
 
