@@ -29,16 +29,8 @@ npm install -g generator-jhipster-migrate
 To use this blueprint, run the below command
 
 ```bash
-jhipster --blueprints migrate
+jhipster-migrate
 ```
-
-You can look for updated migrate blueprint specific options by running
-
-```bash
-jhipster app --blueprints migrate --help
-```
-
-And looking for `(blueprint option: migrate)` like
 
 ## Pre-release
 
