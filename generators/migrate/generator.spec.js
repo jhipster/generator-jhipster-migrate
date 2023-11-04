@@ -21,6 +21,7 @@ describe('SubGenerator migrate of migrate JHipster blueprint', () => {
         .runJHipster('app')
         .withJHipsterConfig({
           baseName: 'upgradeTest',
+          skipCommitHook: true,
           skipClient: true,
           skipServer: true,
         })
