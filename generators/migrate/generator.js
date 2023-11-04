@@ -40,6 +40,8 @@ import { GENERATOR_BOOTSTRAP } from 'generator-jhipster/generators';
 export default class extends BaseGenerator {
   /** @type {boolean} */
   verbose;
+  /** @type {boolean} */
+  changeConfig;
 
   constructor(args, options, features) {
     super(args, options, { jhipsterBootstrap: false, customCommitTask: true, customInstallTask: true, ...features });
@@ -352,6 +354,16 @@ export default class extends BaseGenerator {
 
         // Remove/rename old files
         await this.cleanUp();
+
+        if (this.changeConfig) {
+          await this.prompt([
+            {
+              type: 'confirm',
+              name: 'waitForChange',
+              message: `You can change application configs now. Continue?`,
+            },
+          ]);
+        }
 
         await this.regenerate({
           cli: targetCli,

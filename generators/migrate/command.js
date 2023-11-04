@@ -92,6 +92,13 @@ const command = {
       scope: 'blueprint',
     },
     */
+    changeConfig: {
+      description: 'Pauses the upgrade progress so you can change configs',
+      cli: {
+        type: Boolean,
+      },
+      scope: 'generator',
+    },
     verbose: {
       description: `Shows output of the generation process`,
       cli: {
