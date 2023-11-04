@@ -1,5 +1,7 @@
 import chalk from 'chalk';
 
+const choices = '(none, current, bundled, any npm version)';
+
 /**
  * @type {import('generator-jhipster').JHipsterCommandDefinition}
  */
@@ -13,7 +15,6 @@ const command = {
       },
       prompt: {
         type: 'input',
-        default: 'jhipster',
         message: `Which executable should be used to generate the ${chalk.yellow('source')} application?`,
       },
       scope: 'blueprint',
@@ -25,33 +26,34 @@ const command = {
       },
       prompt: {
         type: 'input',
-        default: 'jhipster',
         message: `Which executable should be used to generate the ${chalk.yellow('target')} application?`,
       },
       scope: 'blueprint',
     },
     sourceVersion: {
-      description: `JHipster version to use to generate the ${chalk.yellow('source')} application`,
+      description: `JHipster version to use to generate the ${chalk.yellow('source')} application ${choices} (default: current)`,
       cli: {
         type: String,
       },
-      prompt: gen => ({
+      prompt: {
         type: 'input',
-        message: `Which JHipster version should be used to generate the ${chalk.yellow('source')} application?`,
-        default: gen.getCurrentSourceVersion(),
-      }),
+        message: `Which JHipster version should be used to generate the ${chalk.yellow(
+          'source',
+        )} application? ${choices} (default: current)`,
+      },
       scope: 'blueprint',
     },
     targetVersion: {
-      description: `JHipster version to use to generate the ${chalk.yellow('target')} application`,
+      description: `JHipster version to use to generate the ${chalk.yellow('target')} application ${choices} (default: bundled)`,
       cli: {
         type: String,
       },
-      prompt: gen => ({
+      prompt: {
         type: 'input',
-        message: `Which JHipster version should be used to generate the ${chalk.yellow('target')} application?`,
-        default: async () => gen.getDefaultTargetVersion(),
-      }),
+        message: `Which JHipster version should be used to generate the ${chalk.yellow(
+          'target',
+        )} application? ${choices} (default: bundled)`,
+      },
       scope: 'blueprint',
     },
     sourceCliOptions: {
@@ -92,15 +94,8 @@ const command = {
       scope: 'blueprint',
     },
     */
-    changeConfig: {
-      description: 'Pauses the upgrade progress so you can change configs',
-      cli: {
-        type: Boolean,
-      },
-      scope: 'generator',
-    },
     verbose: {
-      description: `Shows output of the generation process`,
+      description: `Ask for configs, wait for config changes and shows output of the generation process`,
       cli: {
         type: Boolean,
       },

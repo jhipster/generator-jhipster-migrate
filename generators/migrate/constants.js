@@ -2,6 +2,9 @@ import { dirname } from 'path';
 import untildify from 'untildify';
 import { fileURLToPath } from 'url';
 
+export const BASE_APPLICATION = 'source';
+export const ACTUAL_APPLICATION = 'actual';
+
 export const GENERATOR_JHIPSTER = 'generator-jhipster';
 export const SERVER_MAIN_RES_DIR = 'src/main/resources/';
 
@@ -10,7 +13,7 @@ export const DEFAULT_CLI_OPTIONS = '--force --skip-install --skip-git --ignore-e
 export const DEFAULT_CLI_OPTIONS_V7 = '--with-entities --prefer-global';
 export const GIT_VERSION_NOT_ALLOW_MERGE_UNRELATED_HISTORIES = '2.9.0';
 
-export const MIGRATE_SOURCE_BRANCH = 'jhipster_migrate_source';
+export const MIGRATE_SOURCE_BRANCH = `jhipster_migrate_${BASE_APPLICATION}`;
 export const MIGRATE_TARGET_BRANCH = 'jhipster_migrate_target';
 export const MIGRATE_TMP_FOLDER = '.jhipster-migrate';
 export const MIGRATE_CONFIG_FILE = `${MIGRATE_TMP_FOLDER}/config.json`;

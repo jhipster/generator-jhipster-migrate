@@ -5,7 +5,7 @@ import { transform } from 'p-transform';
 import { globby } from 'globby';
 import semver from 'semver';
 import gitignore from 'parse-gitignore';
-import { resolve } from 'path';
+import { join, resolve } from 'path';
 import latestVersion from 'latest-version';
 import { loadFile } from 'mem-fs';
 import { setModifiedFileState } from 'mem-fs-editor/state';
@@ -32,16 +32,17 @@ import {
   JSON_DRIVER_GIT_CONFIG,
   GIT_DRIVER_PACKAGEJSON,
   GIT_DRIVER_PACKAGEJSON_REF,
+  ACTUAL_APPLICATION,
+  BASE_APPLICATION,
 } from './constants.js';
 import { GENERATOR_JHIPSTER } from 'generator-jhipster';
 import command from './command.js';
 import { GENERATOR_BOOTSTRAP } from 'generator-jhipster/generators';
+import { fileURLToPath } from 'url';
 
 export default class extends BaseGenerator {
   /** @type {boolean} */
   verbose;
-  /** @type {boolean} */
-  changeConfig;
 
   constructor(args, options, features) {
     super(args, options, { jhipsterBootstrap: false, customCommitTask: true, customInstallTask: true, ...features });
@@ -84,8 +85,20 @@ export default class extends BaseGenerator {
       loadOptions() {
         this.parseJHipsterCommand(command);
       },
+      setDefaults() {
+        this.blueprintStorage.defaults({
+          sourceCli: 'jhipster',
+          targetCli: 'jhipster',
+          sourceVersion: 'current',
+          targetVersion: 'bundled',
+          sourceCliOptions: null,
+          targetCliOptions: null,
+        });
+      },
       parseVerbose() {
-        if (!this.verbose) {
+        if (this.verbose) {
+          this.options.askAnswered = true;
+        } else {
           this.spawnCommandOptions = { stdio: 'ignore' };
         }
       },
@@ -189,11 +202,9 @@ export default class extends BaseGenerator {
   get [BaseGenerator.PROMPTING]() {
     return this.asPromptingTaskGroup({
       async prompting() {
-        if (this.blueprintStorage.existed) {
-          this.blueprintStorage.set({});
+        if (this.verbose) {
+          await this.prompt(this.prepareQuestions(command.configs));
         }
-
-        await this.prompt(this.prepareQuestions(command.configs));
       },
     });
   }
@@ -294,24 +305,24 @@ export default class extends BaseGenerator {
             cli: sourceCli,
             jhipsterVersion: sourceVersion,
             blueprints: regenerateBlueprints,
-            type: 'source',
-            cliOptions: sourceCliOptions?.split(' ') ?? [],
+            type: BASE_APPLICATION,
+            cliOptions: (sourceCliOptions ? sourceCliOptions.split(' ') : undefined) ?? [],
           });
 
-          await this.applyPrettier({ name: 'applying prettier to source application', type: 'initial' });
+          await this.applyPrettier({ name: `applying prettier to ${BASE_APPLICATION} application`, type: BASE_APPLICATION });
           // Create the migrate target branch
           await git.checkoutLocalBranch(targetApplicationBranch);
 
           // Checkout actual branch
           await git.checkout(actualApplicationBranch);
-          await this.applyPrettier({ name: 'applying prettier to actual application', type: 'actual' });
+          await this.applyPrettier({ name: `applying prettier to ${ACTUAL_APPLICATION} application`, type: ACTUAL_APPLICATION });
 
           // Create a diff to actual application
           await git
             .checkout(sourceApplicationBranch)
             .reset(actualApplicationBranch)
             .add(['.', '--', `:!${MIGRATE_TMP_FOLDER}`])
-            .commit('apply actual application to migration branch', ['--allow-empty', '--no-verify']);
+            .commit(`apply ${ACTUAL_APPLICATION} application to migration branch`, ['--allow-empty', '--no-verify']);
 
           const mergeOptions = [
             '--strategy',
@@ -337,7 +348,6 @@ export default class extends BaseGenerator {
       async generateWithTargetVersion() {
         const {
           blueprints = [],
-          changeConfig,
           targetApplicationBranch,
           targetCli,
           targetVersion: jhipsterVersion,
@@ -355,7 +365,7 @@ export default class extends BaseGenerator {
         // Remove/rename old files
         await this.cleanUp();
 
-        if (this.changeConfig) {
+        if (this.verbose) {
           await this.prompt([
             {
               type: 'confirm',
@@ -369,8 +379,8 @@ export default class extends BaseGenerator {
           cli: targetCli,
           jhipsterVersion,
           blueprints: regenerateBlueprints,
-          type: changeConfig ? 'change' : 'upgrade',
-          cliOptions: targetCliOptions?.split(' ') ?? [],
+          type: 'target',
+          cliOptions: (targetCliOptions ? targetCliOptions.split(' ') : undefined) ?? [],
         });
       },
     });
@@ -447,7 +457,7 @@ export default class extends BaseGenerator {
    */
   async cleanUp() {
     const ignoredFiles = gitignore(await readFile('.gitignore')).patterns ?? [];
-    const filesToKeep = ['.yo-rc.json', '.jhipster', 'node_modules', '.git', ...ignoredFiles];
+    const filesToKeep = ['.yo-rc.json', '.jhipster', 'package.json', 'package-lock.json', 'node_modules', '.git', ...ignoredFiles];
     (await readdir(this.destinationPath())).forEach(file => {
       if (!filesToKeep.includes(file)) {
         this.rmRf(file);
@@ -463,19 +473,44 @@ export default class extends BaseGenerator {
     }
 
     cliOptions = [...cliOptions, ...DEFAULT_CLI_OPTIONS.split(' ')];
-    if (jhipsterVersion.includes('.') && parseInt(jhipsterVersion.split('.', 2), 10) < 8) {
+    if (this.isV7(jhipsterVersion)) {
       cliOptions = [...cliOptions, ...DEFAULT_CLI_OPTIONS_V7.split(' ')];
     }
 
     const blueprintInfo = blueprints.length > 0 ? ` and ${blueprints.map(bp => `${bp.name}@${bp.version}`).join(', ')} ` : '';
     const message = `JHipster ${jhipsterVersion}${blueprintInfo}`;
+    if (type === 'target') {
+      await this.removeJHipsterVersion();
+    }
 
     try {
-      if (cli && jhipsterVersion === 'none') {
-        this.log.info(`Running local ${cli} ${cliOptions.join(' ')}`);
+      if (jhipsterVersion === 'none') {
+        this.log.info(`Running command ${cli} ${cliOptions.join(' ')}`);
         spinner?.start?.();
         await this.spawn(cli, cliOptions, this.spawnCommandOptions);
+      } else if (jhipsterVersion === 'current' && this.getPackageJsonVersion()) {
+        if (this.isV7(this.getPackageJsonVersion())) {
+          cliOptions = [...cliOptions, ...DEFAULT_CLI_OPTIONS_V7.split(' ')];
+        }
+
+        this.log.info(`Running local npx ${cli} ${cliOptions.join(' ')}`);
+        spinner?.start?.();
+        await this.spawnCommand('npm install', this.spawnCommandOptions);
+        await this.spawn('npx', [cli, ...cliOptions], this.spawnCommandOptions);
+      } else if (jhipsterVersion === 'bundled') {
+        const bundledCli = join(fileURLToPath(new URL('../../cli/cli.cjs', import.meta.url)));
+        cliOptions = ['app', ...cliOptions];
+        this.log.info(`Running bundled ${bundledCli} ${cliOptions.join(' ')}`);
+        spinner?.start?.();
+        await this.spawn(bundledCli, cliOptions, this.spawnCommandOptions);
       } else {
+        if (jhipsterVersion === 'current') {
+          jhipsterVersion = this.getCurrentSourceVersion();
+          if (this.isV7(jhipsterVersion)) {
+            cliOptions = [...cliOptions, ...DEFAULT_CLI_OPTIONS_V7.split(' ')];
+          }
+        }
+
         this.log.info(`Running npx ${cli} ${cliOptions.join(' ')}`);
         spinner?.start?.();
         await libexec({
@@ -531,6 +566,10 @@ export default class extends BaseGenerator {
     }
   }
 
+  getPackageJsonVersion() {
+    return this.readDestinationJSON('package.json').devDependencies?.['generator-jhipster'];
+  }
+
   getCurrentSourceVersion() {
     return this.readDestinationJSON('package.json').devDependencies?.['generator-jhipster'] ?? this.jhipsterConfig.jhipsterVersion;
   }
@@ -540,12 +579,8 @@ export default class extends BaseGenerator {
   }
 
   async applyPrettier({ type, ...options }) {
-    await this.pipeline(
-      {
-        filter: () => false,
-        refresh: false,
-        ...options,
-      },
+    await this.commit(
+      options,
       transform(
         () => {},
         async function () {
@@ -557,13 +592,51 @@ export default class extends BaseGenerator {
           }
         },
       ),
+    );
+
+    await this.createGit()
+      .add(['.', '--', `:!${MIGRATE_TMP_FOLDER}`])
+      .commit(`apply updated prettier to ${type} application`, ['--allow-empty', '--no-verify']);
+  }
+
+  async removeJHipsterVersion() {
+    await this.commit(
+      {},
+      transform(
+        () => {},
+        async function () {
+          for (const file of ['.yo-rc.json']) {
+            const memFsFile = loadFile(file);
+            if (file === '.yo-rc.json') {
+              const contents = JSON.parse(memFsFile.contents.toString());
+              contents['generator-jhipster'].jhipsterVersion = undefined;
+              memFsFile.contents = Buffer.from(JSON.stringify(contents));
+            }
+
+            setModifiedFileState(memFsFile);
+            this.push(memFsFile);
+          }
+        },
+      ),
+    );
+  }
+
+  async commit(options, ...transforms) {
+    await this.pipeline(
+      {
+        filter: () => false,
+        refresh: false,
+        ...options,
+      },
+      ...transforms,
       await createPrettierTransform.call(this, { ignoreErrors: true, prettierJava: true, prettierPackageJson: true }),
       createESLintTransform.call(this, { ignoreErrors: true, extensions: 'ts,js' }),
       createRemoveUnusedImportsTransform.call(this, { ignoreErrors: true }),
       createCommitTransform(),
     );
-    await this.createGit()
-      .add(['.', '--', `:!${MIGRATE_TMP_FOLDER}`])
-      .commit(`apply updated prettier to ${type} application`, ['--allow-empty', '--no-verify']);
+  }
+
+  isV7(version) {
+    return version.includes('.') && parseInt(version.split('.', 2), 10) < 8;
   }
 }
