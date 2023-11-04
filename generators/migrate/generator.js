@@ -1,3 +1,4 @@
+import { setTimeout } from 'timers/promises';
 import chalk from 'chalk';
 import { readFile, rm, readdir, appendFile } from 'fs/promises';
 import libexec from 'libnpmexec';
@@ -316,13 +317,22 @@ export default class extends BaseGenerator {
             cliOptions: (sourceCliOptions ? sourceCliOptions.split(' ') : undefined) ?? [],
           });
 
+          // Add 1s between commits for more consistent git log
+          await setTimeout(1000);
+
           await this.applyPrettier({ name: `applying prettier to ${BASE_APPLICATION} application`, type: BASE_APPLICATION });
           // Create the migrate target branch
           await git.checkoutLocalBranch(targetApplicationBranch);
 
+          // Add 1s between commits for more consistent git log
+          await setTimeout(1000);
+
           // Checkout actual branch
           await git.checkout(actualApplicationBranch);
           await this.applyPrettier({ name: `applying prettier to ${ACTUAL_APPLICATION} application`, type: ACTUAL_APPLICATION });
+
+          // Add 1s between commits for more consistent git log
+          await setTimeout(1000);
 
           // Create a diff to actual application
           await git
@@ -341,6 +351,9 @@ export default class extends BaseGenerator {
           if (await this.checkGitVersion(GIT_VERSION_NOT_ALLOW_MERGE_UNRELATED_HISTORIES)) {
             mergeOptions.push('--allow-unrelated-histories');
           }
+
+          // Add 1s between commits for more consistent git log
+          await setTimeout(1000);
 
           // Register reference for merging
           await git.checkout(actualApplicationBranch).merge(mergeOptions);
