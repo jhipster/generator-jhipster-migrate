@@ -12,9 +12,7 @@ This is a [JHipster](https://www.jhipster.tech/) blueprint, that is meant to be 
 
 # Prerequisites
 
-As this is a [JHipster](https://www.jhipster.tech/) blueprint, we expect you have JHipster and its related tools already installed:
-
-- [Installing JHipster](https://www.jhipster.tech/installation/)
+For this [JHipster](https://www.jhipster.tech/) blueprint, we expect you have an JHipster generated application.
 
 # Installation
 
@@ -32,13 +30,10 @@ To use this blueprint, run the below command
 jhipster-migrate
 ```
 
-## Pre-release
-
-To use an unreleased version, install it using git.
+A `wizard` mode is available running the bellow command
 
 ```bash
-npm install -g jhipster/generator-jhipster-migrate#main
-jhipster --blueprints migrate --skip-jhipster-dependencies
+jhipster-migrate --verbose
 ```
 
 [npm-image]: https://img.shields.io/npm/v/generator-jhipster-migrate.svg
