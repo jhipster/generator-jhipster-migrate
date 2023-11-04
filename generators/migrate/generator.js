@@ -104,6 +104,8 @@ export default class extends BaseGenerator {
       },
 
       async setupThreeWayDiff() {
+        if (!this.verbose) return;
+
         const git = this.createGit();
         const THREE_WAY_DESCRIPTION = 'Three way merge';
         const DIFF3 = 'diff3';
@@ -140,6 +142,8 @@ export default class extends BaseGenerator {
       },
 
       async setupGitPackageJsonDriver() {
+        if (!this.verbose) return;
+
         const git = this.createGit();
         if (
           (await git.getConfig(`merge.${GIT_DRIVER_PACKAGEJSON_REF}.driver`)).value &&

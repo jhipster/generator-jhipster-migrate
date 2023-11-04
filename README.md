@@ -30,7 +30,7 @@ To use this blueprint, run the below command
 jhipster-migrate
 ```
 
-A `wizard` mode is available running the bellow command
+A wizard/advanced mode is available running the bellow command
 
 ```bash
 jhipster-migrate --verbose
