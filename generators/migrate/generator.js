@@ -161,10 +161,10 @@ export default class extends BaseGenerator {
   ${Object.entries(JSON_DRIVER_GIT_CONFIG)
     .map(([key, value]) => chalk.yellow(`${key} = ${value}`))
     .join('\n  ')}
- 
+
  And ${chalk.green('~/.gitattributes')} will be created with:
   ${chalk.yellow(`package.json merge=${GIT_DRIVER_PACKAGEJSON_REF}`)}
- 
+
  For more information see https://github.com/mshima/${GIT_DRIVER_PACKAGEJSON}.
  `);
         const result = await this.prompt([
@@ -304,6 +304,16 @@ export default class extends BaseGenerator {
           // Remove/rename old files
           await this.cleanUp();
 
+          if (this.verbose) {
+            await this.prompt([
+              {
+                type: 'confirm',
+                name: 'waitForEnvironment',
+                message: `We are about to start generating the application using current JHipster version ${sourceVersion}. You can customize your environment now.`,
+              },
+            ]);
+          }
+
           const regenerateBlueprints = blueprints
             .filter(blueprint => !blueprint.new)
             .map(blueprint => ({ name: blueprint.name, version: blueprint.version }));
@@ -390,7 +400,7 @@ export default class extends BaseGenerator {
             {
               type: 'confirm',
               name: 'waitForChange',
-              message: `You can change application configs now. Continue?`,
+              message: `You can change application configuration now. Continue?`,
             },
           ]);
         }
