@@ -20,6 +20,7 @@ import {
   createRemoveUnusedImportsTransform,
 } from 'generator-jhipster/generators/bootstrap/support';
 import registryUrl from 'registry-url';
+import packageVersions from 'pkg-versions';
 
 import {
   DEFAULT_CLI_OPTIONS,
@@ -79,13 +80,34 @@ export default class extends BaseGenerator {
           throw new Error('Exiting the process.');
         }
       },
+
+      async assertGitRepository() {
+        const git = this.createGit();
+        if (!(await git.checkIsRepo())) {
+          await git.init().add('.').commit('initial', ['--allow-empty', '--no-verify']);
+        }
+      },
+
+      async assertNoLocalChanges() {
+        const result = await this.createGit().status();
+        if (!result.isClean()) {
+          throw new Error(
+            ` local changes found.\n\tPlease commit/stash them before upgrading\n\t${result.files
+              .map(file => `${file.index} ${file.path}`)
+              .join('\n\t')}`,
+          );
+        }
+      },
+
       createMigrationConfig() {
         this.blueprintStorage = this.createStorage(MIGRATE_CONFIG_FILE);
         this.blueprintConfig = this.blueprintStorage.createProxy();
       },
+
       loadOptions() {
         this.parseJHipsterCommand(command);
       },
+
       setDefaults() {
         this.blueprintStorage.defaults({
           sourceCli: 'jhipster',
@@ -96,12 +118,67 @@ export default class extends BaseGenerator {
           targetCliOptions: null,
         });
       },
+
       parseVerbose() {
         if (this.verbose) {
           this.options.askAnswered = true;
         } else {
           this.spawnCommandOptions = { stdio: 'ignore' };
         }
+      },
+    });
+  }
+
+  get [BaseGenerator.PROMPTING]() {
+    return this.asPromptingTaskGroup({
+      async prompting() {
+        if (this.verbose) {
+          await this.prompt(this.prepareQuestions(command.configs));
+        }
+      },
+    });
+  }
+
+  get [BaseGenerator.CONFIGURING]() {
+    return this.asConfiguringTaskGroup({
+      async checkLatestBlueprintVersions() {
+        const { blueprints } = this.jhipsterConfig;
+        if (!blueprints || blueprints.length === 0) {
+          this.log('No blueprints detected, skipping check of last blueprint version');
+          return;
+        }
+
+        const targetBlueprints = [];
+        for (const blueprint of blueprints) {
+          const packageName = blueprint.name.startsWith('generator-jhipster-') ? blueprint.name : `generator-jhipster-${blueprint.name}`;
+          await this.prompt([
+            {
+              type: 'input',
+              name: 'version',
+              message: `What version of ${blueprint.name} do you want to use?`,
+              default: blueprint.version,
+              choices: await packageVersions(packageName),
+            },
+          ]);
+
+          targetBlueprints.push({ name: blueprint.name, targetVersion: blueprint.version });
+        }
+
+        this.blueprintStorage.set('blueprints', targetBlueprints);
+      },
+
+      async detectCurrentBranch() {
+        this.blueprintStorage.set('actualApplicationBranch', await this.createGit().revparse(['--abbrev-ref', 'HEAD']));
+        this.blueprintStorage.set('sourceApplicationBranch', MIGRATE_SOURCE_BRANCH);
+        this.blueprintStorage.set('targetApplicationBranch', MIGRATE_TARGET_BRANCH);
+      },
+
+      async cleanupOldMigrateSourceBranch() {
+        await this.cleanupBranch(this.blueprintConfig.sourceApplicationBranch);
+      },
+
+      async cleanupOldMigrateTargetBranch() {
+        await this.cleanupBranch(this.blueprintConfig.targetApplicationBranch);
       },
 
       async setupThreeWayDiff() {
@@ -204,81 +281,6 @@ export default class extends BaseGenerator {
     });
   }
 
-  get [BaseGenerator.PROMPTING]() {
-    return this.asPromptingTaskGroup({
-      async prompting() {
-        if (this.verbose) {
-          await this.prompt(this.prepareQuestions(command.configs));
-        }
-      },
-    });
-  }
-
-  get [BaseGenerator.CONFIGURING]() {
-    return this.asConfiguringTaskGroup({
-      /*
-      Async checkLatestBlueprintVersions() {
-        const { blueprints } = this.blueprintConfig;
-        if (!blueprints || blueprints.length === 0) {
-          this.log('No blueprints detected, skipping check of last blueprint version');
-          return;
-        }
-
-        this.log.ok('checking for new blueprint versions');
-        await Promise.all(
-          blueprints
-            .filter(blueprint => !blueprint.targetVersion)
-            .map(async blueprint => {
-              try {
-                blueprint.targetVersion = await latestVersion(blueprint.name);
-                if (blueprint.new || semver.lt(blueprint.version, blueprint.targetVersion)) {
-                  this.newBlueprintVersionFound = true;
-                  this.log.ok(`new ${blueprint.name} version found: ${blueprint.targetVersion}`);
-                } else {
-                  this.log.warn(
-                    `${chalk.green('No update available.')} Application has already been generated with latest version for blueprint: ${
-                      blueprint.name
-                    }`,
-                  );
-                }
-
-                this.log.ok(`done checking for new version for blueprint ${blueprint.name}@${blueprint.targetVersion}`);
-              } catch {
-                this.log.error(`Could not find version for blueprint ${blueprint.name}`);
-              }
-            }),
-        );
-        this.blueprintStorage.set('blueprints', blueprints);
-        this.log.ok('done checking for new version of blueprints');
-      },
-      */
-
-      async assertGitRepository() {
-        const git = this.createGit();
-        if (!(await git.checkIsRepo())) {
-          await git.init().add('.').commit('Initial', ['--allow-empty', '--no-verify']);
-        }
-      },
-
-      async assertNoLocalChanges() {
-        const result = await this.createGit().status();
-        if (!result.isClean()) {
-          throw new Error(
-            ` local changes found.\n\tPlease commit/stash them before upgrading\n\t${result.files
-              .map(file => `${file.index} ${file.path}`)
-              .join('\n\t')}`,
-          );
-        }
-      },
-
-      async detectCurrentBranch() {
-        this.blueprintStorage.set('actualApplicationBranch', await this.createGit().revparse(['--abbrev-ref', 'HEAD']));
-        this.blueprintStorage.set('sourceApplicationBranch', MIGRATE_SOURCE_BRANCH);
-        this.blueprintStorage.set('targetApplicationBranch', MIGRATE_TARGET_BRANCH);
-      },
-    });
-  }
-
   get [BaseGenerator.PREPARING]() {
     return this.asPreparingTaskGroup({
       async prepareMigrateBranch() {
@@ -293,82 +295,77 @@ export default class extends BaseGenerator {
         } = this.blueprintConfig;
 
         const git = this.createGit();
-        try {
-          // Check if migrate branch exists.
-          await git.revparse(['--verify', sourceApplicationBranch]);
-        } catch {
-          // Create and checkout migrate branch
-          await git.checkout(['--orphan', sourceApplicationBranch]);
-          this.log.ok(`created branch ${sourceApplicationBranch}`);
+        // Create and checkout migrate branch
+        await git.checkout(['--orphan', sourceApplicationBranch]);
+        this.log.ok(`created branch ${sourceApplicationBranch}`);
 
-          // Remove/rename old files
-          await this.cleanUp();
+        // Remove/rename old files
+        await this.cleanUp();
 
-          if (this.verbose) {
-            await this.prompt([
-              {
-                type: 'confirm',
-                name: 'waitForEnvironment',
-                message: `We are about to start generating the application using current JHipster version ${sourceVersion}. You can customize your environment now.`,
-              },
-            ]);
-          }
-
-          const regenerateBlueprints = blueprints
-            .filter(blueprint => !blueprint.new)
-            .map(blueprint => ({ name: blueprint.name, version: blueprint.version }));
-
-          // Regenerate the project
-          await this.regenerate({
-            cli: sourceCli,
-            jhipsterVersion: sourceVersion,
-            blueprints: regenerateBlueprints,
-            type: BASE_APPLICATION,
-            cliOptions: (sourceCliOptions ? sourceCliOptions.split(' ') : undefined) ?? [],
-          });
-
-          // Add 1s between commits for more consistent git log
-          await setTimeout(1000);
-
-          await this.applyPrettier({ name: `applying prettier to ${BASE_APPLICATION} application`, type: BASE_APPLICATION });
-          // Create the migrate target branch
-          await git.checkoutLocalBranch(targetApplicationBranch);
-
-          // Add 1s between commits for more consistent git log
-          await setTimeout(1000);
-
-          // Checkout actual branch
-          await git.checkout(actualApplicationBranch);
-          await this.applyPrettier({ name: `applying prettier to ${ACTUAL_APPLICATION} application`, type: ACTUAL_APPLICATION });
-
-          // Add 1s between commits for more consistent git log
-          await setTimeout(1000);
-
-          // Create a diff to actual application
-          await git
-            .checkout(sourceApplicationBranch)
-            .reset(actualApplicationBranch)
-            .add(['.', '--', `:!${MIGRATE_TMP_FOLDER}`])
-            .commit(`apply ${ACTUAL_APPLICATION} application to migration branch`, ['--allow-empty', '--no-verify']);
-
-          const mergeOptions = [
-            '--strategy',
-            'ours',
-            sourceApplicationBranch,
-            '-m',
-            `Initial merge of ${sourceApplicationBranch} branch into application`,
-          ];
-          if (await this.checkGitVersion(GIT_VERSION_NOT_ALLOW_MERGE_UNRELATED_HISTORIES)) {
-            mergeOptions.push('--allow-unrelated-histories');
-          }
-
-          // Add 1s between commits for more consistent git log
-          await setTimeout(1000);
-
-          // Register reference for merging
-          await git.checkout(actualApplicationBranch).merge(mergeOptions);
-          this.log.ok(`merged ${sourceApplicationBranch} into ${actualApplicationBranch}`);
+        if (this.verbose) {
+          await this.prompt([
+            {
+              type: 'confirm',
+              name: 'waitForEnvironment',
+              message: `We are about to start generating the application using current JHipster version ${sourceVersion}. You can customize your environment now.`,
+            },
+          ]);
         }
+
+        const regenerateBlueprints = blueprints
+          .filter(blueprint => !blueprint.new)
+          .map(blueprint => ({ name: blueprint.name, version: blueprint.version }));
+
+        // Regenerate the project
+        await this.regenerate({
+          cli: sourceCli,
+          jhipsterVersion: sourceVersion,
+          blueprints: regenerateBlueprints,
+          type: BASE_APPLICATION,
+          cliOptions: (sourceCliOptions ? sourceCliOptions.split(' ') : undefined) ?? [],
+        });
+
+        // Add 1s between commits for more consistent git log
+        await setTimeout(1000);
+
+        await this.applyPrettier({ name: `applying prettier to ${BASE_APPLICATION} application`, type: BASE_APPLICATION });
+        // Create the migrate target branch
+        await git.checkoutLocalBranch(targetApplicationBranch);
+
+        // Add 1s between commits for more consistent git log
+        await setTimeout(1000);
+
+        // Checkout actual branch
+        await git.checkout(actualApplicationBranch);
+        await this.applyPrettier({ name: `applying prettier to ${ACTUAL_APPLICATION} application`, type: ACTUAL_APPLICATION });
+
+        // Add 1s between commits for more consistent git log
+        await setTimeout(1000);
+
+        // Create a diff to actual application
+        await git
+          .checkout(sourceApplicationBranch)
+          .reset(actualApplicationBranch)
+          .add(['.', '--', `:!${MIGRATE_TMP_FOLDER}`])
+          .commit(`apply ${ACTUAL_APPLICATION} application to migration branch`, ['--allow-empty', '--no-verify']);
+
+        const mergeOptions = [
+          '--strategy',
+          'ours',
+          sourceApplicationBranch,
+          '-m',
+          `initial merge of ${sourceApplicationBranch} branch into application`,
+        ];
+        if (await this.checkGitVersion(GIT_VERSION_NOT_ALLOW_MERGE_UNRELATED_HISTORIES)) {
+          mergeOptions.push('--allow-unrelated-histories');
+        }
+
+        // Add 1s between commits for more consistent git log
+        await setTimeout(1000);
+
+        // Register reference for merging
+        await git.checkout(actualApplicationBranch).merge(mergeOptions);
+        this.log.ok(`merged ${sourceApplicationBranch} into ${actualApplicationBranch}`);
       },
     });
   }
@@ -389,7 +386,6 @@ export default class extends BaseGenerator {
         const regenerateBlueprints = blueprints.map(blueprint => ({
           name: blueprint.name,
           version: blueprint.targetVersion,
-          new: blueprint.new,
         }));
 
         // Remove/rename old files
@@ -425,7 +421,7 @@ export default class extends BaseGenerator {
         try {
           await this.createGit()
             .checkout(actualApplicationBranch, ['-f'])
-            .merge([targetApplicationBranch, '-m', `Merging ${targetApplicationBranch} into application`])
+            .merge([targetApplicationBranch, '-m', `merging ${targetApplicationBranch} into application`])
             .reset(ResetMode.HARD);
           spinner.succeed('Migration patch applied');
         } catch (error) {
@@ -561,7 +557,7 @@ export default class extends BaseGenerator {
       this.rmRf(keystore);
       await this.createGit()
         .add(['.', '--', `:!${MIGRATE_TMP_FOLDER}`])
-        .commit(`Migration application generated with ${message} (${type})`, ['--allow-empty', '--no-verify']);
+        .commit(`migration application generated with ${message} (${type})`, ['--allow-empty', '--no-verify']);
 
       if (spinner) {
         spinner.succeed(`successfully regenerated ${chalk.yellow(type)} application using ${message}`);
@@ -668,5 +664,29 @@ export default class extends BaseGenerator {
 
   isV7(version) {
     return version.includes('.') && parseInt(version.split('.', 2), 10) < 8;
+  }
+
+  async cleanupBranch(branch) {
+    const git = this.createGit();
+    try {
+      await git.revparse(['--verify', branch]);
+    } catch {
+      // Branch does not exist
+      return;
+    }
+
+    const answers = await this.prompt([
+      {
+        type: 'confirm',
+        name: 'deleteBranch',
+        message: `Old migration branch ${branch} found. Do you want to delete it?`,
+        default: false,
+      },
+    ]);
+    if (answers.deleteBranch) {
+      await git.deleteLocalBranch(branch);
+    } else {
+      throw new Error('Migration branch already exists');
+    }
   }
 }
