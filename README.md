@@ -1,6 +1,6 @@
-# generator-jhipster-migrate
+# JHipster Migrate Blueprint
 
-> JHipster blueprint, migrate blueprint for JHipster
+> A JHipster blueprint that helps you upgrade between JHipster versions.
 
 [![NPM version][npm-image]][npm-url]
 [![Generator][github-generator-image]][github-generator-url]
@@ -24,13 +24,13 @@ npm install -g generator-jhipster-migrate
 
 # Usage
 
-To use this blueprint, run the below command
+To use this blueprint, run the command:
 
 ```bash
 jhipster-migrate
 ```
 
-A wizard/advanced mode is available running the bellow command
+A wizard/advanced mode is available running the command below:
 
 ```bash
 jhipster-migrate --verbose
@@ -46,7 +46,7 @@ jhipster-migrate --target-cli-options "--db postgresql"
 
 ## Configuration changes
 
-Upgrade process is paused in the middle to allow you to change configurations like chaging the database type. Using:
+The upgrade process can be paused in the middle to allow you to change configurations like updating the database type. Usage:
 
 ```sh
 jhipster-migrate --verbose
