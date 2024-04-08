@@ -412,6 +412,7 @@ export default class extends BaseGenerator {
           type: 'target',
           cliOptions: (targetCliOptions ? targetCliOptions.split(' ') : undefined) ?? [],
         });
+        await this.applyPrettier({ name: `applying prettier to ${targetApplicationBranch} application`, type: 'target' });
       },
     });
   }
