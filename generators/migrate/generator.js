@@ -6,7 +6,7 @@ import { transform } from 'p-transform';
 import { globby } from 'globby';
 import semver from 'semver';
 import gitignore from 'parse-gitignore';
-import { join, resolve } from 'path';
+import { join } from 'path';
 import latestVersion from 'latest-version';
 import { loadFile } from 'mem-fs';
 import { setModifiedFileState } from 'mem-fs-editor/state';
@@ -14,6 +14,7 @@ import { createCommitTransform } from 'mem-fs-editor/transform';
 import ora from 'ora';
 import { ResetMode } from 'simple-git';
 import BaseGenerator from 'generator-jhipster/generators/base-application';
+import getNode from 'get-node';
 import {
   createPrettierTransform,
   createESLintTransform,
@@ -35,6 +36,7 @@ import {
   GIT_DRIVER_PACKAGEJSON_REF,
   ACTUAL_APPLICATION,
   BASE_APPLICATION,
+  V7_NODE,
 } from './constants.js';
 import { GENERATOR_JHIPSTER } from 'generator-jhipster';
 import command from './command.js';
@@ -472,7 +474,7 @@ export default class extends BaseGenerator {
   }
 
   async rmRf(file) {
-    const absolutePath = resolve(file);
+    const absolutePath = this.destinationPath(file);
     if (this.verbose) {
       this.log.verboseInfo(`Removing ${absolutePath}`);
     }
@@ -497,9 +499,12 @@ export default class extends BaseGenerator {
   }
 
   async regenerate({ cli, jhipsterVersion, blueprints, type, cliOptions }) {
-    const spinner = this.verbose ? undefined : ora(`regenerating ${chalk.yellow(type)} application`);
+    const regenerateMessage = `regenerating ${chalk.yellow(type)} application using JHipster ${jhipsterVersion}`;
+    const spinner = this.verbose ? undefined : ora(regenerateMessage);
+    const packageJsonJHipsterVersion = this.getPackageJsonVersion();
+    let requiresManualNode16;
     if (this.verbose) {
-      this.log.info(`regenerating ${chalk.yellow(type)} application`);
+      this.log.info(regenerateMessage);
     }
 
     cliOptions = [...cliOptions, ...DEFAULT_CLI_OPTIONS.split(' ')];
@@ -509,6 +514,7 @@ export default class extends BaseGenerator {
 
     const blueprintInfo = blueprints.length > 0 ? ` and ${blueprints.map(bp => `${bp.name}@${bp.version}`).join(', ')} ` : '';
     const message = `JHipster ${jhipsterVersion}${blueprintInfo}`;
+    let spawnCommandOptions = { ...this.spawnCommandOptions };
     if (type === 'target') {
       await this.removeJHipsterVersion();
     }
@@ -517,22 +523,27 @@ export default class extends BaseGenerator {
       if (jhipsterVersion === 'none') {
         this.log.info(`Running command ${cli} ${cliOptions.join(' ')}`);
         spinner?.start?.();
-        await this.spawn(cli, cliOptions, this.spawnCommandOptions);
-      } else if (jhipsterVersion === 'current' && this.getPackageJsonVersion()) {
-        if (this.isV7(this.getPackageJsonVersion())) {
+        await this.spawn(cli, cliOptions, spawnCommandOptions);
+      } else if (jhipsterVersion === 'current' && packageJsonJHipsterVersion) {
+        if (this.isV7(packageJsonJHipsterVersion)) {
           cliOptions = [...cliOptions, ...DEFAULT_CLI_OPTIONS_V7.split(' ')];
+          const { path: nodePath } = await getNode(V7_NODE);
+          spawnCommandOptions = { ...spawnCommandOptions, execPath: nodePath, preferLocal: true };
         }
+
+        cliOptions = [cli, ...cliOptions];
+        cli = 'npx';
 
         this.log.info(`Running local npx ${cli} ${cliOptions.join(' ')}`);
         spinner?.start?.();
         await this.spawnCommand('npm install', this.spawnCommandOptions);
-        await this.spawn('npx', [cli, ...cliOptions], this.spawnCommandOptions);
+        await this.spawn(cli, cliOptions, spawnCommandOptions);
       } else if (jhipsterVersion === 'bundled') {
-        const bundledCli = join(fileURLToPath(new URL('../../cli/cli.cjs', import.meta.url)));
+        cli = join(fileURLToPath(new URL('../../cli/cli.cjs', import.meta.url)));
         cliOptions = ['app', ...cliOptions];
-        this.log.info(`Running bundled ${bundledCli} ${cliOptions.join(' ')}`);
+        this.log.info(`Running bundled ${cli} ${cliOptions.join(' ')}`);
         spinner?.start?.();
-        await this.spawn(bundledCli, cliOptions, this.spawnCommandOptions);
+        await this.spawn(cli, cliOptions, spawnCommandOptions);
       } else {
         if (jhipsterVersion === 'current') {
           jhipsterVersion = this.getCurrentSourceVersion();
@@ -542,6 +553,17 @@ export default class extends BaseGenerator {
         }
 
         this.log.info(`Running npx ${cli} ${cliOptions.join(' ')}`);
+        if (this.isV7(jhipsterVersion)) {
+          requiresManualNode16 = true;
+          await this.prompt([
+            {
+              type: 'confirm',
+              name: 'installNode16',
+              message: `To generate the application using JHipster ${jhipsterVersion}, node 16 is required, install it globally now.`,
+            },
+          ]);
+        }
+
         spinner?.start?.();
         await libexec({
           yes: true,
@@ -570,12 +592,22 @@ export default class extends BaseGenerator {
       }
     } catch (error) {
       if (spinner) {
-        spinner.fail(`successfully regenerated ${chalk.yellow(type)} application using ${message}`);
+        spinner.fail(`failed to regenerate ${chalk.yellow(type)} application using ${message}`);
       } else {
-        this.log.error(`successfully regenerated ${chalk.yellow(type)} application using ${message}`);
+        this.log.error(`failed to regenerate ${chalk.yellow(type)} application using ${message}`);
       }
 
       throw error;
+    }
+
+    if (requiresManualNode16) {
+      await this.prompt([
+        {
+          type: 'confirm',
+          name: 'revertNode16',
+          message: 'Revert node version to the previous one.',
+        },
+      ]);
     }
   }
 
