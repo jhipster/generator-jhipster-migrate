@@ -42,6 +42,7 @@
     "ora": "^8.0.1",
     "p-transform": "^4.1.5",
     "parse-gitignore": "^2.0.0",
+    "pkg-versions": "^4.0.0",
     "readable-stream": "^4.5.2",
     "semver": "^7.6.0",
     "simple-git": "^3.23.0",
