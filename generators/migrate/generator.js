@@ -531,7 +531,7 @@ export default class extends BaseGenerator {
 
         const installSpinner = this.verbose ? undefined : ora('running npm install');
         // Flush adapter
-        await this.env.adapter.onIdle();
+        await this.env.adapter.onIdle?.();
         installSpinner?.start?.();
         await this.spawnCommand('npm install', this.spawnCommandOptions);
         installSpinner.succeed('npm install completed');
@@ -562,7 +562,7 @@ export default class extends BaseGenerator {
 
       this.log.info(`Running ${cli} ${cliOptions.join(' ')}`);
       // Flush adapter
-      await this.env.adapter.onIdle();
+      await this.env.adapter.onIdle?.();
       spinner?.start?.();
       await this.spawn(cli, cliOptions, spawnCommandOptions);
 
