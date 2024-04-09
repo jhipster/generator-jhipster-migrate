@@ -2,6 +2,8 @@ import { dirname } from 'path';
 import untildify from 'untildify';
 import { fileURLToPath } from 'url';
 
+export const V7_NODE = '16.20.2';
+
 export const BASE_APPLICATION = 'source';
 export const ACTUAL_APPLICATION = 'actual';
 
