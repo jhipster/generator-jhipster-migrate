@@ -49,6 +49,7 @@ describe('SubGenerator migrate of migrate JHipster blueprint', () => {
             .replace(new RegExp(escapeRegExp(version), 'g'), 'VERSION'),
         ).toMatchInlineSnapshot(`
           "Merging jhipster_migrate_target into application
+          apply updated prettier to target application
           Migration application generated with JHipster bundled (target)
           Initial merge of jhipster_migrate_source branch into application
           apply actual application to migration branch
@@ -74,7 +75,7 @@ describe('SubGenerator migrate of migrate JHipster blueprint', () => {
       `);
     });
     it('generates expected number of commits', async () => {
-      expect((await createGit().log()).total).toBe(8);
+      expect((await createGit().log()).total).toBe(9);
     });
     it('should remove file from updated config', async () => {
       assert.noFile('.lintstagedrc.js');
