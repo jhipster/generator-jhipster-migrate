@@ -1,7 +1,6 @@
 import { setTimeout } from 'timers/promises';
 import chalk from 'chalk';
 import { readFile, rm, readdir, appendFile } from 'fs/promises';
-import libexec from 'libnpmexec';
 import { transform } from 'p-transform';
 import { globby } from 'globby';
 import semver from 'semver';
@@ -20,7 +19,6 @@ import {
   createESLintTransform,
   createRemoveUnusedImportsTransform,
 } from 'generator-jhipster/generators/bootstrap/support';
-import registryUrl from 'registry-url';
 
 import {
   DEFAULT_CLI_OPTIONS,
@@ -521,64 +519,52 @@ export default class extends BaseGenerator {
     }
 
     try {
-      if (jhipsterVersion === 'none') {
-        this.log.info(`Running command ${cli} ${cliOptions.join(' ')}`);
-        spinner?.start?.();
-        await this.spawn(cli, cliOptions, spawnCommandOptions);
-      } else if (jhipsterVersion === 'current' && packageJsonJHipsterVersion) {
+      if (jhipsterVersion === 'current' && packageJsonJHipsterVersion) {
         if (this.isV7(packageJsonJHipsterVersion)) {
           cliOptions = [...cliOptions, ...DEFAULT_CLI_OPTIONS_V7.split(' ')];
           const { path: nodePath } = await getNode(V7_NODE);
           spawnCommandOptions = { ...spawnCommandOptions, execPath: nodePath, preferLocal: true };
         }
 
-        cliOptions = [cli, ...cliOptions];
+        cliOptions = ['--no', '--', cli, ...cliOptions];
         cli = 'npx';
 
-        this.log.info(`Running local npx ${cli} ${cliOptions.join(' ')}`);
-        spinner?.start?.();
+        const installSpinner = this.verbose ? undefined : ora('running npm install');
+        // Flush adapter
+        await this.env.adapter.onIdle();
+        installSpinner?.start?.();
         await this.spawnCommand('npm install', this.spawnCommandOptions);
-        await this.spawn(cli, cliOptions, spawnCommandOptions);
+        installSpinner.succeed('npm install completed');
       } else if (jhipsterVersion === 'bundled') {
         cli = join(fileURLToPath(new URL('../../cli/cli.cjs', import.meta.url)));
         cliOptions = ['app', ...cliOptions];
-        this.log.info(`Running bundled ${cli} ${cliOptions.join(' ')}`);
-        spinner?.start?.();
-        await this.spawn(cli, cliOptions, spawnCommandOptions);
-      } else {
+      } else if (jhipsterVersion !== 'none') {
         if (jhipsterVersion === 'current') {
           jhipsterVersion = this.getCurrentSourceVersion();
           if (this.isV7(jhipsterVersion)) {
             cliOptions = [...cliOptions, ...DEFAULT_CLI_OPTIONS_V7.split(' ')];
+            const { path: nodePath } = await getNode(V7_NODE);
+            spawnCommandOptions = { ...spawnCommandOptions, execPath: nodePath, preferLocal: true };
           }
         }
 
-        this.log.info(`Running npx ${cli} ${cliOptions.join(' ')}`);
-        if (this.isV7(jhipsterVersion)) {
-          requiresManualNode16 = true;
-          await this.prompt([
-            {
-              type: 'confirm',
-              name: 'installNode16',
-              message: `To generate the application using JHipster ${jhipsterVersion}, node 16 is required, install it globally now.`,
-            },
-          ]);
-        }
-
-        spinner?.start?.();
-        await libexec({
-          yes: true,
-          npxCache: `${MIGRATE_TMP_FOLDER}/npx/${type}`,
-          cache: `${MIGRATE_TMP_FOLDER}/npx-exec/${type}`,
-          call: `${cli} ${[...cliOptions].join(' ')}`,
-          localBin: null,
-          globalBin: null,
-          path: null,
-          packages: [`${GENERATOR_JHIPSTER}@${jhipsterVersion}`, ...blueprints.map(({ name, version }) => `${name}@${version}`)],
-          registry: registryUrl(),
-          stdio: this.verbose ? 'inherit' : 'ignore',
-        });
+        cliOptions = [
+          '--package',
+          `${GENERATOR_JHIPSTER}@${jhipsterVersion}`,
+          ...blueprints.map(({ name, version }) => ['--package', `${name}@${version}`]).flat(),
+          '--yes',
+          '--',
+          cli,
+          ...cliOptions,
+        ];
+        cli = 'npx';
       }
+
+      this.log.info(`Running ${cli} ${cliOptions.join(' ')}`);
+      // Flush adapter
+      await this.env.adapter.onIdle();
+      spinner?.start?.();
+      await this.spawn(cli, cliOptions, spawnCommandOptions);
 
       const keystore = `${SERVER_MAIN_RES_DIR}config/tls/keystore.p12`;
       this.rmRf(keystore);
