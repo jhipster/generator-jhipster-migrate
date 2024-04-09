@@ -26,6 +26,10 @@ jobs:
             node-version: 20
             generate-command: npx --yes generator-jhipster@8.1.0 --defaults
             migrate-command: jhipster-migrate
+          - tests: j8.2.1
+            node-version: 20
+            generate-command: npx --yes generator-jhipster@8.2.1 --defaults
+            migrate-command: jhipster-migrate
     defaults:
       run:
         working-directory: ${{ github.workspace }}/app

@@ -19,6 +19,7 @@ import {
   createESLintTransform,
   createRemoveUnusedImportsTransform,
 } from 'generator-jhipster/generators/bootstrap/support';
+import packageVersions from 'pkg-versions';
 
 import {
   DEFAULT_CLI_OPTIONS,
@@ -40,6 +41,7 @@ import { GENERATOR_JHIPSTER } from 'generator-jhipster';
 import command from './command.js';
 import { GENERATOR_BOOTSTRAP } from 'generator-jhipster/generators';
 import { fileURLToPath } from 'url';
+import { normalizeBlueprintName } from './internal/blueprints.js';
 
 export default class extends BaseGenerator {
   /** @type {boolean} */
@@ -140,6 +142,37 @@ export default class extends BaseGenerator {
 
   get [BaseGenerator.CONFIGURING]() {
     return this.asConfiguringTaskGroup({
+      removeMigrateFromBlueprints() {
+        delete this.options.blueprints;
+        this.jhipsterConfig.blueprints = (this.jhipsterConfig.blueprints ?? [])
+          .map(blueprint => ({ ...blueprint, name: normalizeBlueprintName(blueprint.name) }))
+          .filter(blueprint => blueprint.name !== 'generator-jhipster-migrate');
+      },
+      async checkLatestBlueprintVersions() {
+        const { blueprints } = this.jhipsterConfig;
+        if (blueprints.length === 0) {
+          this.log('No blueprints detected, skipping check of last blueprint version');
+          return;
+        }
+
+        const targetBlueprints = [];
+        for (const blueprint of blueprints) {
+          await this.prompt([
+            {
+              type: 'input',
+              name: 'version',
+              message: `What version of ${blueprint.name} do you want to use?`,
+              default: blueprint.version,
+              choices: await packageVersions(blueprint.name),
+            },
+          ]);
+
+          targetBlueprints.push({ name: blueprint.name, targetVersion: blueprint.version });
+        }
+
+        this.blueprintStorage.set('blueprints', targetBlueprints);
+      },
+
       async detectCurrentBranch() {
         this.blueprintStorage.set('actualApplicationBranch', await this.createGit().revparse(['--abbrev-ref', 'HEAD']));
         this.blueprintStorage.set('sourceApplicationBranch', MIGRATE_SOURCE_BRANCH);
@@ -268,82 +301,78 @@ export default class extends BaseGenerator {
         } = this.blueprintConfig;
 
         const git = this.createGit();
-        try {
-          // Check if migrate branch exists.
-          await git.revparse(['--verify', sourceApplicationBranch]);
-        } catch {
-          // Create and checkout migrate branch
-          await git.checkout(['--orphan', sourceApplicationBranch]);
-          this.log.ok(`created branch ${sourceApplicationBranch}`);
+        // Create and checkout migrate branch
+        await git.checkout(['--orphan', sourceApplicationBranch]);
+        this.log.ok(`created branch ${sourceApplicationBranch}`);
 
-          // Remove/rename old files
-          await this.cleanUp();
+        // Remove/rename old files
+        await this.cleanUp();
 
-          if (this.verbose) {
-            await this.prompt([
-              {
-                type: 'confirm',
-                name: 'waitForEnvironment',
-                message: `We are about to start generating the application using current JHipster version ${sourceVersion}. You can customize your environment now.`,
-              },
-            ]);
-          }
-
-          const regenerateBlueprints = blueprints
-            .filter(blueprint => !blueprint.new)
-            .map(blueprint => ({ name: blueprint.name, version: blueprint.version }));
-
-          // Regenerate the project
-          await this.regenerate({
-            cli: sourceCli,
-            jhipsterVersion: sourceVersion,
-            blueprints: regenerateBlueprints,
-            type: BASE_APPLICATION,
-            cliOptions: (sourceCliOptions ? sourceCliOptions.split(' ') : undefined) ?? [],
-          });
-
-          // Add 1s between commits for more consistent git log
-          await setTimeout(1000);
-
-          await this.applyPrettier({ name: `applying prettier to ${BASE_APPLICATION} application`, type: BASE_APPLICATION });
-          // Create the migrate target branch
-          await git.checkoutLocalBranch(targetApplicationBranch);
-
-          // Add 1s between commits for more consistent git log
-          await setTimeout(1000);
-
-          // Checkout actual branch
-          await git.checkout(actualApplicationBranch);
-          await this.applyPrettier({ name: `applying prettier to ${ACTUAL_APPLICATION} application`, type: ACTUAL_APPLICATION });
-
-          // Add 1s between commits for more consistent git log
-          await setTimeout(1000);
-
-          // Create a diff to actual application
-          await git
-            .checkout(sourceApplicationBranch)
-            .reset(actualApplicationBranch)
-            .add(['.', '--', `:!${MIGRATE_TMP_FOLDER}`])
-            .commit(`apply ${ACTUAL_APPLICATION} application to migration branch`, ['--allow-empty', '--no-verify']);
-
-          const mergeOptions = [
-            '--strategy',
-            'ours',
-            sourceApplicationBranch,
-            '-m',
-            `initial merge of ${sourceApplicationBranch} branch into application`,
-          ];
-          if (await this.checkGitVersion(GIT_VERSION_NOT_ALLOW_MERGE_UNRELATED_HISTORIES)) {
-            mergeOptions.push('--allow-unrelated-histories');
-          }
-
-          // Add 1s between commits for more consistent git log
-          await setTimeout(1000);
-
-          // Register reference for merging
-          await git.checkout(actualApplicationBranch).merge(mergeOptions);
-          this.log.ok(`merged ${sourceApplicationBranch} into ${actualApplicationBranch}`);
+        if (this.verbose) {
+          await this.prompt([
+            {
+              type: 'confirm',
+              name: 'waitForEnvironment',
+              message: `We are about to start generating the application using current JHipster version ${sourceVersion}. You can customize your environment now.`,
+            },
+          ]);
         }
+
+        const regenerateBlueprints = blueprints.map(blueprint => ({
+          name: normalizeBlueprintName(blueprint.name),
+          version: blueprint.version,
+        }));
+
+        // Regenerate the project
+        await this.regenerate({
+          cli: sourceCli,
+          jhipsterVersion: sourceVersion,
+          blueprints: regenerateBlueprints,
+          type: BASE_APPLICATION,
+          cliOptions: (sourceCliOptions ? sourceCliOptions.split(' ') : undefined) ?? [],
+        });
+
+        // Add 1s between commits for more consistent git log
+        await setTimeout(1000);
+
+        await this.applyPrettier({ name: `applying prettier to ${BASE_APPLICATION} application`, type: BASE_APPLICATION });
+        // Create the migrate target branch
+        await git.checkoutLocalBranch(targetApplicationBranch);
+
+        // Add 1s between commits for more consistent git log
+        await setTimeout(1000);
+
+        // Checkout actual branch
+        await git.checkout(actualApplicationBranch);
+        await this.applyPrettier({ name: `applying prettier to ${ACTUAL_APPLICATION} application`, type: ACTUAL_APPLICATION });
+
+        // Add 1s between commits for more consistent git log
+        await setTimeout(1000);
+
+        // Create a diff to actual application
+        await git
+          .checkout(sourceApplicationBranch)
+          .reset(actualApplicationBranch)
+          .add(['.', '--', `:!${MIGRATE_TMP_FOLDER}`])
+          .commit(`apply ${ACTUAL_APPLICATION} application to migration branch`, ['--allow-empty', '--no-verify']);
+
+        const mergeOptions = [
+          '--strategy',
+          'ours',
+          sourceApplicationBranch,
+          '-m',
+          `initial merge of ${sourceApplicationBranch} branch into application`,
+        ];
+        if (await this.checkGitVersion(GIT_VERSION_NOT_ALLOW_MERGE_UNRELATED_HISTORIES)) {
+          mergeOptions.push('--allow-unrelated-histories');
+        }
+
+        // Add 1s between commits for more consistent git log
+        await setTimeout(1000);
+
+        // Register reference for merging
+        await git.checkout(actualApplicationBranch).merge(mergeOptions);
+        this.log.ok(`merged ${sourceApplicationBranch} into ${actualApplicationBranch}`);
       },
     });
   }
@@ -507,8 +536,20 @@ export default class extends BaseGenerator {
         // Flush adapter
         await this.env.adapter.onIdle?.();
         installSpinner?.start?.();
-        await this.spawnCommand('npm install', this.spawnCommandOptions);
-        installSpinner.succeed('npm install completed');
+        try {
+          await this.spawnCommand('npm install', this.spawnCommandOptions);
+          installSpinner.succeed('npm install completed');
+        } catch (error) {
+          try {
+            await this.rmRf('package-lock.json');
+            await this.rmRf('node_modules');
+            await this.spawnCommand('npm install', this.spawnCommandOptions);
+            installSpinner.succeed('npm install completed');
+          } catch {
+            installSpinner.fail('npm install completed with error');
+            throw error;
+          }
+        }
       } else if (jhipsterVersion === 'bundled') {
         cli = join(fileURLToPath(new URL('../../cli/cli.cjs', import.meta.url)));
         cliOptions = ['app', ...cliOptions];
