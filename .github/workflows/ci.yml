@@ -1,0 +1,44 @@
+name: Migrate
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  migrate:
+    strategy:
+      matrix:
+        tests:
+          - j7
+          - j7-skip-dependencies
+        include:
+          - tests: j7
+            node-version: 16.20.2
+            generate-command: 'npx --yes generator-jhipster@7.9.3 --defaults'
+          - tests: j7-skip-dependencies
+            node-version: 16.20.2
+            generate-command: 'npx --yes generator-jhipster@7.9.3 --defaults --skip-jhipster-dependencies'
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/app
+    name: ${{ matrix.tests }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: jhipster/actions/create-app-path@v0
+      - uses: jhipster/actions/setup-git@v0
+      - uses: actions/checkout@v4
+        with:
+          path: generator-jhipster-migrate
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: ${{ matrix.generate-command }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: |
+          npm ci
+          npm link
+        working-directory: ${{ github.workspace }}/generator-jhipster-migrate
+      - run: jhipster-migrate
+      - run: git -c color.ui=always diff @^
