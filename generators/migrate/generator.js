@@ -143,6 +143,7 @@ export default class extends BaseGenerator {
   get [BaseGenerator.CONFIGURING]() {
     return this.asConfiguringTaskGroup({
       removeMigrateFromBlueprints() {
+        delete this.options.blueprints;
         this.jhipsterConfig.blueprints = (this.jhipsterConfig.blueprints ?? [])
           .map(blueprint => ({ ...blueprint, name: normalizeBlueprintName(blueprint.name) }))
           .filter(blueprint => blueprint.name !== 'generator-jhipster-migrate');
@@ -535,8 +536,20 @@ export default class extends BaseGenerator {
         // Flush adapter
         await this.env.adapter.onIdle?.();
         installSpinner?.start?.();
-        await this.spawnCommand('npm install', this.spawnCommandOptions);
-        installSpinner.succeed('npm install completed');
+        try {
+          await this.spawnCommand('npm install', this.spawnCommandOptions);
+          installSpinner.succeed('npm install completed');
+        } catch (error) {
+          try {
+            await this.rmRf('package-lock.json');
+            await this.rmRf('node_modules');
+            await this.spawnCommand('npm install', this.spawnCommandOptions);
+            installSpinner.succeed('npm install completed');
+          } catch {
+            installSpinner.fail('npm install completed with error');
+            throw error;
+          }
+        }
       } else if (jhipsterVersion === 'bundled') {
         cli = join(fileURLToPath(new URL('../../cli/cli.cjs', import.meta.url)));
         cliOptions = ['app', ...cliOptions];
