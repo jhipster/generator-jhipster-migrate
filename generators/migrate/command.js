@@ -78,22 +78,6 @@ const command = {
       },
       scope: 'blueprint',
     },
-    /*
-    SourceBlueprints: {
-      description: `Migrate from specific blueprint versions instead of the current, e.g. --target-blueprint-versions foo@0.0.1,bar@1.0.2`,
-      cli: {
-        type: String,
-      },
-      scope: 'blueprint',
-    },
-    targetBlueprints: {
-      description: `Migrate to specific blueprint versions instead of the latest, e.g. --target-blueprint-versions foo@0.0.1,bar@1.0.2`,
-      cli: {
-        type: String,
-      },
-      scope: 'blueprint',
-    },
-    */
     verbose: {
       description: `Ask for configs, wait for config changes and shows output of the generation process`,
       cli: {
