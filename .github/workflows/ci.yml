@@ -12,10 +12,20 @@ jobs:
         include:
           - tests: j7
             node-version: 16.20.2
-            generate-command: 'npx --yes generator-jhipster@7.9.3 --defaults'
+            generate-command: npx --yes generator-jhipster@7.9.3 --defaults
+            migrate-command: jhipster-migrate
           - tests: j7-skip-dependencies
             node-version: 16.20.2
-            generate-command: 'npx --yes generator-jhipster@7.9.3 --defaults --skip-jhipster-dependencies'
+            generate-command: npx --yes generator-jhipster@7.9.3 --defaults --skip-jhipster-dependencies
+            migrate-command: jhipster-migrate
+          - tests: j7-7.9.4
+            node-version: 16.20.2
+            generate-command: npx --yes generator-jhipster@7.9.3 --defaults
+            migrate-command: jhipster-migrate --target-version 7.9.4
+          - tests: j8.1.0
+            node-version: 20
+            generate-command: npx --yes generator-jhipster@8.1.0 --defaults
+            migrate-command: jhipster-migrate
     defaults:
       run:
         working-directory: ${{ github.workspace }}/app
@@ -40,5 +50,5 @@ jobs:
           npm ci
           npm link
         working-directory: ${{ github.workspace }}/generator-jhipster-migrate
-      - run: jhipster-migrate
+      - run: ${{ matrix.migrate-command }}
       - run: git -c color.ui=always diff @^
