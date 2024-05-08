@@ -17,7 +17,7 @@ const blueprint = packageFolderName.startsWith('jhipster-') ? `generator-${packa
   runJHipster({
     executableName,
     executableVersion: version,
-    defaultCommand: 'migrate',
+    defaultCommand: 'app',
     devBlueprintPath,
     blueprints: {
       [blueprint]: version,
@@ -26,7 +26,7 @@ const blueprint = packageFolderName.startsWith('jhipster-') ? `generator-${packa
       console.log('===================== JHipster migrate =====================');
       console.log('');
     },
-    lookups: [{ packagePaths: [packagePath], lookups: ['generators'] }],
+    lookups: [{ packagePaths: [packagePath] }],
   }).catch(done);
 
   process.on('unhandledRejection', up => {
