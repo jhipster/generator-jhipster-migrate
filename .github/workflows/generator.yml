@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - uses: jhipster/actions/setup-git@v0
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'npm'
-      - run: git config --global user.name "JHipster Bot"; git config --global user.email "jhipster-bot@jhipster.tech"; git config --global init.defaultBranch main
       - run: npm ci
       - run: npm run test
