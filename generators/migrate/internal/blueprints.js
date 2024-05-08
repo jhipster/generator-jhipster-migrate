@@ -14,7 +14,9 @@ export function normalizeBlueprintName(blueprint) {
     }
 
     return ns.with({ unscoped: `generator-jhipster-${ns.unscoped}` }).toString();
-  } catch {}
+  } catch {
+    // Ignore
+  }
 
   if (blueprint && blueprint.startsWith('@')) {
     return blueprint;

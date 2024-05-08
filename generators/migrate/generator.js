@@ -483,7 +483,9 @@ export default class extends BaseGenerator {
 
     try {
       await rm(absolutePath, { recursive: true });
-    } catch {}
+    } catch {
+      // Ignore
+    }
   }
 
   /**
