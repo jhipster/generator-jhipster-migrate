@@ -540,15 +540,15 @@ export default class extends BaseGenerator {
         installSpinner?.start?.();
         try {
           await this.spawnCommand('npm install', this.spawnCommandOptions);
-          installSpinner.succeed('npm install completed');
+          installSpinner?.succeed?.('npm install completed');
         } catch (error) {
           try {
             await this.rmRf('package-lock.json');
             await this.rmRf('node_modules');
             await this.spawnCommand('npm install', this.spawnCommandOptions);
-            installSpinner.succeed('npm install completed');
+            installSpinner?.succeed?.('npm install completed');
           } catch {
-            installSpinner.fail('npm install completed with error');
+            installSpinner?.fail?.('npm install completed with error');
             throw error;
           }
         }
