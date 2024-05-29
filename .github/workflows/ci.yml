@@ -6,27 +6,24 @@ jobs:
   migrate:
     strategy:
       matrix:
-        tests:
-          - j7
-          - j7-skip-dependencies
         include:
-          - tests: j7
+          - tests: 7.9.3-latest
             node-version: 16.20.2
             generate-command: npx --yes generator-jhipster@7.9.3 --defaults
             migrate-command: jhipster-migrate
-          - tests: j7-skip-dependencies
+          - tests: 7.9.3-latest (skip-dependencies)
             node-version: 16.20.2
             generate-command: npx --yes generator-jhipster@7.9.3 --defaults --skip-jhipster-dependencies
             migrate-command: jhipster-migrate
-          - tests: j7-7.9.4
+          - tests: 7.9.3-7.9.4
             node-version: 16.20.2
             generate-command: npx --yes generator-jhipster@7.9.3 --defaults
             migrate-command: jhipster-migrate --target-version 7.9.4
-          - tests: j8.1.0
+          - tests: 8.1.0-latest
             node-version: 20
             generate-command: npx --yes generator-jhipster@8.1.0 --defaults
             migrate-command: jhipster-migrate
-          - tests: j8.2.1
+          - tests: 8.2.1-latest
             node-version: 20
             generate-command: npx --yes generator-jhipster@8.2.1 --defaults
             migrate-command: jhipster-migrate
