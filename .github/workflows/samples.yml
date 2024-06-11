@@ -5,6 +5,7 @@ permissions:
 jobs:
   migrate:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - tests: 7.9.3-latest
