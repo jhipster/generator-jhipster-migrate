@@ -40,7 +40,6 @@ import {
 import { GENERATOR_JHIPSTER } from 'generator-jhipster';
 import command from './command.js';
 import { GENERATOR_BOOTSTRAP } from 'generator-jhipster/generators';
-import { fileURLToPath } from 'url';
 import { normalizeBlueprintName } from './internal/blueprints.js';
 
 export default class extends BaseGenerator {
@@ -553,7 +552,8 @@ export default class extends BaseGenerator {
           }
         }
       } else if (jhipsterVersion === 'bundled') {
-        cli = join(fileURLToPath(new URL('../../cli/cli.cjs', import.meta.url)));
+        const packagePath = this.env.getPackagePath('jhipster:app');
+        cli = join(packagePath, 'dist/cli/jhipster.cjs');
         cliOptions = ['app', ...cliOptions];
       } else if (jhipsterVersion !== 'none') {
         if (jhipsterVersion === 'current') {
