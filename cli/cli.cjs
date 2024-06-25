@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
-const { dirname, join } = require('path');
+const { dirname, basename, join } = require('path');
 const { version, bin } = require('../package.json');
 
 // Get package name to use as namespace.
 // Allows blueprints to be aliased.
 const packagePath = dirname(__dirname);
+const packageFolderName = basename(packagePath);
 const devBlueprintPath = join(packagePath, '.blueprint');
+const blueprint = packageFolderName.startsWith('jhipster-') ? `generator-${packageFolderName}` : packageFolderName;
 
 (async () => {
   const { runJHipster, done, logger } = await import('generator-jhipster/cli');
@@ -15,9 +17,11 @@ const devBlueprintPath = join(packagePath, '.blueprint');
   runJHipster({
     executableName,
     executableVersion: version,
-    defaultCommand: 'migrate',
+    defaultCommand: 'app',
     devBlueprintPath,
-    commands: require('./commands.cjs'),
+    blueprints: {
+      [blueprint]: version,
+    },
     printBlueprintLogo: () => {
       console.log('===================== JHipster migrate =====================');
       console.log('');

@@ -1,11 +1,11 @@
 import { setTimeout } from 'timers/promises';
-import chalk from 'chalk';
 import { readFile, rm, readdir, appendFile } from 'fs/promises';
+import { join } from 'path';
+import chalk from 'chalk';
 import { transform } from 'p-transform';
 import { globby } from 'globby';
 import semver from 'semver';
 import gitignore from 'parse-gitignore';
-import { join } from 'path';
 import latestVersion from 'latest-version';
 import { loadFile } from 'mem-fs';
 import { setModifiedFileState } from 'mem-fs-editor/state';
@@ -21,6 +21,8 @@ import {
 } from 'generator-jhipster/generators/bootstrap/support';
 import packageVersions from 'pkg-versions';
 
+import { GENERATOR_JHIPSTER } from 'generator-jhipster';
+import { GENERATOR_BOOTSTRAP } from 'generator-jhipster/generators';
 import {
   DEFAULT_CLI_OPTIONS,
   DEFAULT_CLI_OPTIONS_V7,
@@ -37,9 +39,7 @@ import {
   BASE_APPLICATION,
   V7_NODE,
 } from './constants.js';
-import { GENERATOR_JHIPSTER } from 'generator-jhipster';
 import command from './command.js';
-import { GENERATOR_BOOTSTRAP } from 'generator-jhipster/generators';
 import { normalizeBlueprintName } from './internal/blueprints.js';
 
 export default class extends BaseGenerator {

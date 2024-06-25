@@ -1,6 +1,6 @@
+import { readFile } from 'fs/promises';
 import assert from 'yeoman-assert';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { readFile } from 'fs/promises';
 import simpleGit from 'simple-git';
 import { escapeRegExp } from 'lodash-es';
 
