@@ -12,6 +12,7 @@
         "written": true
       }
     },
+    "githubWorkflows": true,
     "jhipsterVersion": "7.7.0",
     "js": true,
     "localBlueprint": false,
