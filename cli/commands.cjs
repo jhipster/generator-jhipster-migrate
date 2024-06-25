@@ -1,6 +1,6 @@
 module.exports = {
   migrate: {
-    description: 'Run migrate sub-generator (migrate blueprint)',
+    desc: 'Run migrate sub-generator (migrate blueprint)',
     blueprint: 'generator-jhipster-migrate',
   },
 };
