@@ -22,7 +22,7 @@
   "scripts": {
     "ejslint": "ejslint generators/**/*.ejs",
     "lint": "eslint .",
-    "lint-fix": "npm run ejslint && npm run lint -- --fix",
+    "lint-fix": "npm run lint -- --fix",
     "prepare": "husky install",
     "prettier-check": "prettier --check \"{,**/}*.{md,json,yml,html,cjs,mjs,js,cts,mts,ts,tsx,css,scss,vue,java}\"",
     "prettier-format": "prettier --write \"{,**/}*.{md,json,yml,html,cjs,mjs,js,cts,mts,ts,tsx,css,scss,vue,java}\"",
