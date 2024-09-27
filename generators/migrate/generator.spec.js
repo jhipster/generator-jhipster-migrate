@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import simpleGit from 'simple-git';
 import { escapeRegExp } from 'lodash-es';
 
-import { basicHelpers as helpers } from 'generator-jhipster/testing';
+import { basicHelpers as helpers, runResult } from 'generator-jhipster/testing';
 
 /**
  * @return {import('simple-git').SimpleGit}
@@ -17,17 +17,19 @@ const SUB_GENERATOR_NAMESPACE = `jhipster-migrate:${SUB_GENERATOR}`;
 describe('SubGenerator migrate of migrate JHipster blueprint', () => {
   describe('default application', () => {
     beforeAll(async () => {
-      const context = await helpers
+      await helpers
         .runJHipster('app')
+        .withOptions({
+          skipGit: false,
+        })
         .withJHipsterConfig({
           baseName: 'upgradeTest',
           skipCommitHook: true,
           skipClient: true,
           skipServer: true,
-        })
-        .withParentBlueprintLookup();
+        });
 
-      await context
+      await runResult
         .create(SUB_GENERATOR_NAMESPACE)
         .withOptions({
           sourceVersion: 'bundled',

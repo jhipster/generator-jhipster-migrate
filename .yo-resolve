@@ -1,5 +1,2 @@
 .blueprint/** skip
-.github/workflows/** skip
-generators/** skip
 README.md skip
-cli/cli.cjs skip
