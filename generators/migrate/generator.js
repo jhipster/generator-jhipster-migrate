@@ -1,5 +1,5 @@
 import { setTimeout } from 'timers/promises';
-import { readFile, rm, readdir, appendFile } from 'fs/promises';
+import { appendFile, readFile, readdir, rm } from 'fs/promises';
 import { join } from 'path';
 import chalk from 'chalk';
 import { transform } from 'p-transform';
@@ -15,8 +15,8 @@ import { ResetMode } from 'simple-git';
 import BaseGenerator from 'generator-jhipster/generators/base-application';
 import getNode from 'get-node';
 import {
-  createPrettierTransform,
   createESLintTransform,
+  createPrettierTransform,
   createRemoveUnusedImportsTransform,
 } from 'generator-jhipster/generators/bootstrap/support';
 import packageVersions from 'pkg-versions';
@@ -24,19 +24,19 @@ import packageVersions from 'pkg-versions';
 import { GENERATOR_JHIPSTER } from 'generator-jhipster';
 import { GENERATOR_BOOTSTRAP } from 'generator-jhipster/generators';
 import {
+  ACTUAL_APPLICATION,
+  BASE_APPLICATION,
   DEFAULT_CLI_OPTIONS,
   DEFAULT_CLI_OPTIONS_V7,
+  GIT_DRIVER_PACKAGEJSON,
+  GIT_DRIVER_PACKAGEJSON_REF,
   GIT_VERSION_NOT_ALLOW_MERGE_UNRELATED_HISTORIES,
-  MIGRATE_SOURCE_BRANCH,
+  JSON_DRIVER_GIT_CONFIG,
   MIGRATE_CONFIG_FILE,
+  MIGRATE_SOURCE_BRANCH,
   MIGRATE_TARGET_BRANCH,
   MIGRATE_TMP_FOLDER,
   SERVER_MAIN_RES_DIR,
-  JSON_DRIVER_GIT_CONFIG,
-  GIT_DRIVER_PACKAGEJSON,
-  GIT_DRIVER_PACKAGEJSON_REF,
-  ACTUAL_APPLICATION,
-  BASE_APPLICATION,
   V7_NODE,
 } from './constants.js';
 import command from './command.js';

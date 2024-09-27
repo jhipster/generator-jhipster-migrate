@@ -2,10 +2,9 @@ import chalk from 'chalk';
 
 const choices = '(none, current, bundled, any npm version)';
 
-/**
- * @type {import('generator-jhipster').JHipsterCommandDefinition}
- */
-const command = {
+import { asCommand } from 'generator-jhipster';
+
+export default asCommand({
   options: {},
   configs: {
     sourceCli: {
@@ -86,6 +85,4 @@ const command = {
       scope: 'generator',
     },
   },
-};
-
-export default command;
+});
