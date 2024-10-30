@@ -2,4 +2,5 @@
 module.exports = {
   blueprints: undefined,
   defaultCommand: 'migrate',
+  commands: require('./commands.cjs'),
 };
