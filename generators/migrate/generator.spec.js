@@ -30,7 +30,7 @@ describe('SubGenerator migrate of migrate JHipster blueprint', () => {
         });
 
       await runResult
-        .create(SUB_GENERATOR_NAMESPACE)
+        .createJHipster(SUB_GENERATOR_NAMESPACE)
         .withOptions({
           sourceVersion: 'bundled',
           targetVersion: 'bundled',
