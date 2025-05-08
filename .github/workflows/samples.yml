@@ -21,31 +21,31 @@ jobs:
             generate-command: npx --yes generator-jhipster@7.9.3 --defaults
             migrate-command: jhipster-migrate --target-version 7.9.4
           - tests: 8.1.0-latest
-            node-version: 20
+            node-version: 22
             generate-command: npx --yes generator-jhipster@8.1.0 --defaults
             migrate-command: jhipster-migrate
           - tests: 8.2.1-latest
-            node-version: 20
+            node-version: 22
             generate-command: npx --yes generator-jhipster@8.2.1 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.3.0
-            node-version: 20
+            node-version: 22
             generate-command: npx --yes generator-jhipster@8.3.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.4.0
-            node-version: 20
+            node-version: 22
             generate-command: npx --yes generator-jhipster@8.4.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.5.0
-            node-version: 20
+            node-version: 22
             generate-command: npx --yes generator-jhipster@8.5.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.6.0
-            node-version: 20
+            node-version: 22
             generate-command: npx --yes generator-jhipster@8.6.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.7.0
-            node-version: 20
+            node-version: 22
             generate-command: npx --yes generator-jhipster@8.7.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.8.0
