@@ -1,8 +1,7 @@
 import chalk from 'chalk';
+import { asCommand } from 'generator-jhipster';
 
 const choices = '(none, current, bundled, any npm version)';
-
-import { asCommand } from 'generator-jhipster';
 
 export default asCommand({
   options: {},

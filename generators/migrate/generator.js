@@ -1,28 +1,29 @@
-import { setTimeout } from 'timers/promises';
 import { appendFile, readFile, readdir, rm } from 'fs/promises';
 import { join } from 'path';
+import { setTimeout } from 'timers/promises';
+
 import chalk from 'chalk';
-import { transform } from 'p-transform';
-import { globby } from 'globby';
-import semver from 'semver';
-import gitignore from 'parse-gitignore';
-import latestVersion from 'latest-version';
-import { loadFile } from 'mem-fs';
-import { setModifiedFileState } from 'mem-fs-editor/state';
-import { createCommitTransform } from 'mem-fs-editor/transform';
-import ora from 'ora';
-import { ResetMode } from 'simple-git';
-import BaseGenerator from 'generator-jhipster/generators/base-application';
-import getNode from 'get-node';
+import { GENERATOR_JHIPSTER } from 'generator-jhipster';
+import BaseGenerator from 'generator-jhipster/generators/base-simple-application';
 import {
   createESLintTransform,
   createPrettierTransform,
   createRemoveUnusedImportsTransform,
 } from 'generator-jhipster/generators/bootstrap/support';
+import getNode from 'get-node';
+import { globby } from 'globby';
+import latestVersion from 'latest-version';
+import { loadFile } from 'mem-fs';
+import { setModifiedFileState } from 'mem-fs-editor/state';
+import { createCommitTransform } from 'mem-fs-editor/transform';
+import ora from 'ora';
+import { transform } from 'p-transform';
+import gitignore from 'parse-gitignore';
 import packageVersions from 'pkg-versions';
+import semver from 'semver';
+import { ResetMode } from 'simple-git';
 
-import { GENERATOR_JHIPSTER } from 'generator-jhipster';
-import { GENERATOR_BOOTSTRAP } from 'generator-jhipster/generators';
+import command from './command.js';
 import {
   ACTUAL_APPLICATION,
   BASE_APPLICATION,
@@ -39,7 +40,6 @@ import {
   SERVER_MAIN_RES_DIR,
   V7_NODE,
 } from './constants.js';
-import command from './command.js';
 import { normalizeBlueprintName } from './internal/blueprints.js';
 
 export default class extends BaseGenerator {
@@ -51,7 +51,7 @@ export default class extends BaseGenerator {
   }
 
   async beforeQueue() {
-    const bootstrapGenerator = await this.dependsOnJHipster(GENERATOR_BOOTSTRAP);
+    const bootstrapGenerator = await this.dependsOnJHipster('bootstrap');
     bootstrapGenerator.upgradeCommand = true;
   }
 
@@ -102,10 +102,6 @@ export default class extends BaseGenerator {
       createMigrationConfig() {
         this.blueprintStorage = this.createStorage(MIGRATE_CONFIG_FILE);
         this.blueprintConfig = this.blueprintStorage.createProxy();
-      },
-
-      loadOptions() {
-        this.parseJHipsterCommand(command);
       },
 
       setDefaults() {

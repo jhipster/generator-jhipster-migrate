@@ -1,10 +1,10 @@
-import { readFile } from 'fs/promises';
-import assert from 'yeoman-assert';
 import { beforeAll, describe, expect, it } from 'vitest';
-import simpleGit from 'simple-git';
-import { escapeRegExp } from 'lodash-es';
+import { readFile } from 'fs/promises';
 
 import { basicHelpers as helpers, runResult } from 'generator-jhipster/testing';
+import { escapeRegExp } from 'lodash-es';
+import simpleGit from 'simple-git';
+import assert from 'yeoman-assert';
 
 /**
  * @return {import('simple-git').SimpleGit}
@@ -35,7 +35,9 @@ describe('SubGenerator migrate of migrate JHipster blueprint', () => {
           sourceVersion: 'bundled',
           targetVersion: 'bundled',
         })
-        .withParentBlueprintLookup();
+        .withJHipsterGenerators()
+        .withConfiguredBlueprint()
+        .withBlueprintConfig();
     });
 
     it(

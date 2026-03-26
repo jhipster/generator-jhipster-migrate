@@ -1,3 +1,6 @@
-.blueprint/** skip
-.github/workflows/** skip
+.blueprint/cli skip
+.blueprint/generate-sample skip
+.blueprint/github-build-matrix skip
+.github/workflows/build-cache.yml skip
+.github/workflows/samples.yml skip
 README.md skip
