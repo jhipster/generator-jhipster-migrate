@@ -8,7 +8,6 @@ import BaseGenerator from 'generator-jhipster/generators/base-simple-application
 import {
   createESLintTransform,
   createPrettierTransform,
-  createRemoveUnusedImportsTransform,
 } from 'generator-jhipster/generators/bootstrap/support';
 import getNode from 'get-node';
 import { globby } from 'globby';
@@ -501,7 +500,6 @@ export default class extends BaseGenerator {
     const regenerateMessage = `regenerating ${chalk.yellow(type)} application using JHipster ${jhipsterVersion}`;
     const spinner = this.verbose ? undefined : ora(regenerateMessage);
     const packageJsonJHipsterVersion = this.getPackageJsonVersion();
-    let requiresManualNode16;
     if (this.verbose) {
       this.log.info(regenerateMessage);
     }
@@ -599,16 +597,6 @@ export default class extends BaseGenerator {
 
       throw error;
     }
-
-    if (requiresManualNode16) {
-      await this.prompt([
-        {
-          type: 'confirm',
-          name: 'revertNode16',
-          message: 'Revert node version to the previous one.',
-        },
-      ]);
-    }
   }
 
   /**
@@ -693,7 +681,6 @@ export default class extends BaseGenerator {
       ...transforms,
       await createPrettierTransform.call(this, { ignoreErrors: true, prettierJava: true, prettierPackageJson: true }),
       createESLintTransform.call(this, { ignoreErrors: true, extensions: 'ts,js' }),
-      createRemoveUnusedImportsTransform.call(this, { ignoreErrors: true }),
       createCommitTransform(),
     );
   }
