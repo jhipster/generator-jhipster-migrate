@@ -4,7 +4,6 @@ import { asCommand } from 'generator-jhipster';
 const choices = '(none, current, bundled, any npm version)';
 
 export default asCommand({
-  options: {},
   configs: {
     sourceCli: {
       description: `Executable to use to generate the ${chalk.yellow('source')} application`,
