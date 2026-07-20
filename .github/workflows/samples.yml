@@ -79,19 +79,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: jhipster/actions/create-app-path@v0
-      - uses: jhipster/actions/setup-git@v0
-      - uses: actions/checkout@v4
+      - uses: jhipster/actions/create-app-path@v1
+      - uses: jhipster/actions/setup-git@v1
+      - uses: actions/checkout@v7
         with:
           path: generator-jhipster-migrate
           fetch-depth: 1
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
       - run: ${{ matrix.generate-command }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
       - run: |
           npm ci
           npm link
