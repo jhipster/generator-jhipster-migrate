@@ -5,10 +5,7 @@ import { setTimeout } from 'timers/promises';
 import chalk from 'chalk';
 import { GENERATOR_JHIPSTER } from 'generator-jhipster';
 import BaseGenerator from 'generator-jhipster/generators/base-simple-application';
-import {
-  createESLintTransform,
-  createPrettierTransform,
-} from 'generator-jhipster/generators/bootstrap/support';
+import { createESLintTransform, createPrettierTransform } from 'generator-jhipster/generators/bootstrap/support';
 import getNode from 'get-node';
 import { globby } from 'globby';
 import latestVersion from 'latest-version';
@@ -52,6 +49,9 @@ export default class extends BaseGenerator {
   async beforeQueue() {
     const bootstrapGenerator = await this.dependsOnJHipster('bootstrap');
     bootstrapGenerator.upgradeCommand = true;
+
+    this.blueprintStorage = this.createStorage(MIGRATE_CONFIG_FILE);
+    this.blueprintConfig = this.blueprintStorage.createProxy();
   }
 
   get [BaseGenerator.INITIALIZING]() {
@@ -98,11 +98,6 @@ export default class extends BaseGenerator {
         }
       },
 
-      createMigrationConfig() {
-        this.blueprintStorage = this.createStorage(MIGRATE_CONFIG_FILE);
-        this.blueprintConfig = this.blueprintStorage.createProxy();
-      },
-
       setDefaults() {
         this.blueprintStorage.defaults({
           sourceCli: 'jhipster',
@@ -112,6 +107,13 @@ export default class extends BaseGenerator {
           sourceCliOptions: null,
           targetCliOptions: null,
         });
+        // Re-apply CLI options since blueprintStorage was replaced in createMigrationConfig
+        // after the base generator's parseCurrentCommand already wrote options to the original storage.
+        for (const [key, def] of Object.entries(command.configs)) {
+          if (def.scope === 'blueprint' && this.options[key] !== undefined) {
+            this.blueprintStorage.set(key, this.options[key]);
+          }
+        }
       },
 
       parseVerbose() {
@@ -680,7 +682,7 @@ export default class extends BaseGenerator {
       },
       ...transforms,
       await createPrettierTransform.call(this, { ignoreErrors: true, prettierJava: true, prettierPackageJson: true }),
-      createESLintTransform.call(this, { ignoreErrors: true, extensions: 'ts,js' }),
+      await createESLintTransform.call(this, { ignoreErrors: true, extensions: 'ts,js' }),
       createCommitTransform(),
     );
   }
