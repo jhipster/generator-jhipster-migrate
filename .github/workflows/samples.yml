@@ -9,67 +9,51 @@ jobs:
       matrix:
         include:
           - tests: 7.9.3-latest
-            node-version: 16.20.2
             generate-command: npx --yes generator-jhipster@7.9.3 --defaults
             migrate-command: jhipster-migrate
           - tests: 7.9.3-latest (skip-dependencies)
-            node-version: 16.20.2
             generate-command: npx --yes generator-jhipster@7.9.3 --defaults --skip-jhipster-dependencies
             migrate-command: jhipster-migrate
           - tests: 7.9.3-7.9.4
-            node-version: 16.20.2
             generate-command: npx --yes generator-jhipster@7.9.3 --defaults
             migrate-command: jhipster-migrate --target-version 7.9.4
           - tests: 8.1.0-latest
-            node-version: 20
             generate-command: npx --yes generator-jhipster@8.1.0 --defaults
             migrate-command: jhipster-migrate
           - tests: 8.2.1-latest
-            node-version: 20
             generate-command: npx --yes generator-jhipster@8.2.1 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.3.0
-            node-version: 20
             generate-command: npx --yes generator-jhipster@8.3.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.4.0
-            node-version: 20
             generate-command: npx --yes generator-jhipster@8.4.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.5.0
-            node-version: 20
             generate-command: npx --yes generator-jhipster@8.5.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.6.0
-            node-version: 20
             generate-command: npx --yes generator-jhipster@8.6.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.7.0
-            node-version: 20
             generate-command: npx --yes generator-jhipster@8.7.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.8.0
-            node-version: 20
             generate-command: npx --yes generator-jhipster@8.8.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.9.0
-            node-version: 20
             generate-command: npx --yes generator-jhipster@8.9.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.10.0
-            node-version: 20
             generate-command: npx --yes generator-jhipster@8.10.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j9.0.0
-            node-version: 20
             generate-command: npx --yes generator-jhipster@9.0.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j9.1.0
-            node-version: 20
             generate-command: npx --yes generator-jhipster@9.1.0 --defaults
             migrate-command: jhipster-migrate
           - tests: j9.2.0
-            node-version: 20
             generate-command: npx --yes generator-jhipster@9.2.0 --defaults
             migrate-command: jhipster-migrate
     defaults:
@@ -87,11 +71,8 @@ jobs:
           fetch-depth: 1
       - uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node-version }}
-      - run: ${{ matrix.generate-command }}
-      - uses: actions/setup-node@v7
-        with:
           node-version: 24
+      - run: ${{ matrix.generate-command }}
       - run: |
           npm ci
           npm link
