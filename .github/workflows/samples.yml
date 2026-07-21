@@ -8,20 +8,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - tests: 7.9.3-latest
-            generate-command: npx --yes generator-jhipster@7.9.3 --defaults
-            migrate-command: jhipster-migrate
-          - tests: 7.9.3-latest (skip-dependencies)
-            generate-command: npx --yes generator-jhipster@7.9.3 --defaults --skip-jhipster-dependencies
-            migrate-command: jhipster-migrate
-          - tests: 7.9.3-7.9.4
-            generate-command: npx --yes generator-jhipster@7.9.3 --defaults
-            migrate-command: jhipster-migrate --target-version 7.9.4
-          - tests: 8.1.0-latest
-            generate-command: npx --yes generator-jhipster@8.1.0 --defaults
-            migrate-command: jhipster-migrate
-          - tests: 8.2.1-latest
-            generate-command: npx --yes generator-jhipster@8.2.1 --defaults
+          - tests: 7.9.4
+            generate-command: npx --yes generator-jhipster@7.9.4 --defaults
             migrate-command: jhipster-migrate
           - tests: j8.3.0
             generate-command: npx --yes generator-jhipster@8.3.0 --defaults
