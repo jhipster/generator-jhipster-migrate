@@ -523,7 +523,7 @@ export default class extends BaseGenerator {
         if (this.isV7(packageJsonJHipsterVersion)) {
           cliOptions = [...cliOptions, ...DEFAULT_CLI_OPTIONS_V7.split(' ')];
           const { path: nodePath } = await getNode(V7_NODE);
-          spawnCommandOptions = { ...spawnCommandOptions, execPath: nodePath, preferLocal: true };
+          spawnCommandOptions = { ...spawnCommandOptions, nodePath, preferLocal: true };
         }
 
         cliOptions = ['--no', '--', cli, ...cliOptions];
@@ -557,7 +557,7 @@ export default class extends BaseGenerator {
           if (this.isV7(jhipsterVersion)) {
             cliOptions = [...cliOptions, ...DEFAULT_CLI_OPTIONS_V7.split(' ')];
             const { path: nodePath } = await getNode(V7_NODE);
-            spawnCommandOptions = { ...spawnCommandOptions, execPath: nodePath, preferLocal: true };
+            spawnCommandOptions = { ...spawnCommandOptions, nodePath, preferLocal: true };
           }
         }
 
