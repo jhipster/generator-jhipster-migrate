@@ -1,3 +1,9 @@
-.blueprint/** skip
-.github/workflows/** skip
+.blueprint/cli/commands.mjs skip
+.blueprint/generate-sample/** skip
+.blueprint/github-build-matrix/** skip
+.github/workflows/build-cache.yml skip
+.github/workflows/samples.yml skip
 README.md skip
+generators/migrate/command.js skip
+generators/migrate/generator.js skip
+generators/migrate/generator.spec.js skip

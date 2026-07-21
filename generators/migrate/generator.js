@@ -1,28 +1,25 @@
-import { setTimeout } from 'timers/promises';
 import { appendFile, readFile, readdir, rm } from 'fs/promises';
 import { join } from 'path';
+import { setTimeout } from 'timers/promises';
+
 import chalk from 'chalk';
-import { transform } from 'p-transform';
+import { GENERATOR_JHIPSTER } from 'generator-jhipster';
+import BaseGenerator from 'generator-jhipster/generators/base-simple-application';
+import { createESLintTransform, createPrettierTransform } from 'generator-jhipster/generators/bootstrap/support';
+import getNode from 'get-node';
 import { globby } from 'globby';
-import semver from 'semver';
-import gitignore from 'parse-gitignore';
 import latestVersion from 'latest-version';
 import { loadFile } from 'mem-fs';
 import { setModifiedFileState } from 'mem-fs-editor/state';
 import { createCommitTransform } from 'mem-fs-editor/transform';
 import ora from 'ora';
-import { ResetMode } from 'simple-git';
-import BaseGenerator from 'generator-jhipster/generators/base-application';
-import getNode from 'get-node';
-import {
-  createESLintTransform,
-  createPrettierTransform,
-  createRemoveUnusedImportsTransform,
-} from 'generator-jhipster/generators/bootstrap/support';
+import { transform } from 'p-transform';
+import gitignore from 'parse-gitignore';
 import packageVersions from 'pkg-versions';
+import semver from 'semver';
+import { ResetMode } from 'simple-git';
 
-import { GENERATOR_JHIPSTER } from 'generator-jhipster';
-import { GENERATOR_BOOTSTRAP } from 'generator-jhipster/generators';
+import command from './command.js';
 import {
   ACTUAL_APPLICATION,
   BASE_APPLICATION,
@@ -39,7 +36,6 @@ import {
   SERVER_MAIN_RES_DIR,
   V7_NODE,
 } from './constants.js';
-import command from './command.js';
 import { normalizeBlueprintName } from './internal/blueprints.js';
 
 export default class extends BaseGenerator {
@@ -51,8 +47,11 @@ export default class extends BaseGenerator {
   }
 
   async beforeQueue() {
-    const bootstrapGenerator = await this.dependsOnJHipster(GENERATOR_BOOTSTRAP);
+    const bootstrapGenerator = await this.dependsOnJHipster('bootstrap');
     bootstrapGenerator.upgradeCommand = true;
+
+    this.blueprintStorage = this.createStorage(MIGRATE_CONFIG_FILE);
+    this.blueprintConfig = this.blueprintStorage.createProxy();
   }
 
   get [BaseGenerator.INITIALIZING]() {
@@ -99,15 +98,6 @@ export default class extends BaseGenerator {
         }
       },
 
-      createMigrationConfig() {
-        this.blueprintStorage = this.createStorage(MIGRATE_CONFIG_FILE);
-        this.blueprintConfig = this.blueprintStorage.createProxy();
-      },
-
-      loadOptions() {
-        this.parseJHipsterCommand(command);
-      },
-
       setDefaults() {
         this.blueprintStorage.defaults({
           sourceCli: 'jhipster',
@@ -117,6 +107,13 @@ export default class extends BaseGenerator {
           sourceCliOptions: null,
           targetCliOptions: null,
         });
+        // Re-apply CLI options since blueprintStorage was replaced in createMigrationConfig
+        // after the base generator's parseCurrentCommand already wrote options to the original storage.
+        for (const [key, def] of Object.entries(command.configs)) {
+          if (def.scope === 'blueprint' && this.options[key] !== undefined) {
+            this.blueprintStorage.set(key, this.options[key]);
+          }
+        }
       },
 
       parseVerbose() {
@@ -505,7 +502,6 @@ export default class extends BaseGenerator {
     const regenerateMessage = `regenerating ${chalk.yellow(type)} application using JHipster ${jhipsterVersion}`;
     const spinner = this.verbose ? undefined : ora(regenerateMessage);
     const packageJsonJHipsterVersion = this.getPackageJsonVersion();
-    let requiresManualNode16;
     if (this.verbose) {
       this.log.info(regenerateMessage);
     }
@@ -527,7 +523,7 @@ export default class extends BaseGenerator {
         if (this.isV7(packageJsonJHipsterVersion)) {
           cliOptions = [...cliOptions, ...DEFAULT_CLI_OPTIONS_V7.split(' ')];
           const { path: nodePath } = await getNode(V7_NODE);
-          spawnCommandOptions = { ...spawnCommandOptions, execPath: nodePath, preferLocal: true };
+          spawnCommandOptions = { ...spawnCommandOptions, nodePath, preferLocal: true };
         }
 
         cliOptions = ['--no', '--', cli, ...cliOptions];
@@ -561,7 +557,7 @@ export default class extends BaseGenerator {
           if (this.isV7(jhipsterVersion)) {
             cliOptions = [...cliOptions, ...DEFAULT_CLI_OPTIONS_V7.split(' ')];
             const { path: nodePath } = await getNode(V7_NODE);
-            spawnCommandOptions = { ...spawnCommandOptions, execPath: nodePath, preferLocal: true };
+            spawnCommandOptions = { ...spawnCommandOptions, nodePath, preferLocal: true };
           }
         }
 
@@ -602,16 +598,6 @@ export default class extends BaseGenerator {
       }
 
       throw error;
-    }
-
-    if (requiresManualNode16) {
-      await this.prompt([
-        {
-          type: 'confirm',
-          name: 'revertNode16',
-          message: 'Revert node version to the previous one.',
-        },
-      ]);
     }
   }
 
@@ -696,8 +682,7 @@ export default class extends BaseGenerator {
       },
       ...transforms,
       await createPrettierTransform.call(this, { ignoreErrors: true, prettierJava: true, prettierPackageJson: true }),
-      createESLintTransform.call(this, { ignoreErrors: true, extensions: 'ts,js' }),
-      createRemoveUnusedImportsTransform.call(this, { ignoreErrors: true }),
+      await createESLintTransform.call(this, { ignoreErrors: true, extensions: 'ts,js' }),
       createCommitTransform(),
     );
   }

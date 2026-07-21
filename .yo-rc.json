@@ -3,6 +3,8 @@
     "additionalSubGenerators": "migrate",
     "baseName": "migrate",
     "cli": true,
+    "creationTimestamp": 1784320277455,
+    "defaultCommand": "generate-blueprint",
     "entities": [],
     "generators": {
       "migrate": {
@@ -13,7 +15,8 @@
       }
     },
     "githubWorkflows": true,
-    "jhipsterVersion": "8.11.0",
+    "javascriptBlueprint": true,
+    "jhipsterVersion": "9.2.0",
     "js": true,
     "localBlueprint": false,
     "packageJsonType": "module",
