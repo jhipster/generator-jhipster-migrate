@@ -51,8 +51,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: jhipster/actions/create-app-path@v1
-      - uses: jhipster/actions/setup-git@v1
+      - uses: jhipster/actions/create-app-path@v2
+      - uses: jhipster/actions/setup-git@v2
       - uses: actions/checkout@v7
         with:
           path: generator-jhipster-migrate
