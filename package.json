@@ -5,9 +5,18 @@
   "keywords": [
     "yeoman-generator",
     "jhipster-blueprint",
-    "jhipster-8"
+    "jhipster-9"
   ],
-  "license": "UNLICENSED",
+  "homepage": "https://github.com/jhipster/generator-jhipster-migrate#readme",
+  "bugs": {
+    "url": "https://github.com/jhipster/generator-jhipster-migrate/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jhipster/generator-jhipster-migrate.git"
+  },
+  "license": "MIT",
+  "author": "Marcelo Shima <marceloshima@gmail.com>",
   "type": "module",
   "bin": {
     "jhipster-migrate": "cli/cli.cjs"
