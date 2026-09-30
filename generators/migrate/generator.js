@@ -37,6 +37,8 @@ import {
   V7_NODE,
 } from './constants.js';
 import { normalizeBlueprintName } from './internal/blueprints.js';
+import { importFormatters, installAndImportFormatters } from './internal/formatters.js';
+import { getGeneratorJHipsterCli, installGeneratorJHipster } from './internal/generator-jhipster.js';
 
 export default class extends BaseGenerator {
   /** @type {boolean} */
@@ -561,16 +563,22 @@ export default class extends BaseGenerator {
           }
         }
 
-        cliOptions = [
-          '--package',
-          `${GENERATOR_JHIPSTER}@${jhipsterVersion}`,
-          ...blueprints.map(({ name, version }) => ['--package', `${name}@${version}`]).flat(),
-          '--yes',
-          '--',
-          cli,
-          ...cliOptions,
-        ];
-        cli = 'npx';
+        const flyCli = await this.installJHipsterCli({ cli, jhipsterVersion, blueprints });
+        if (flyCli) {
+          cliOptions = [flyCli, ...cliOptions];
+          cli = process.execPath;
+        } else {
+          cliOptions = [
+            '--package',
+            `${GENERATOR_JHIPSTER}@${jhipsterVersion}`,
+            ...blueprints.map(({ name, version }) => ['--package', `${name}@${version}`]).flat(),
+            '--yes',
+            '--',
+            cli,
+            ...cliOptions,
+          ];
+          cli = 'npx';
+        }
       }
 
       this.log.info(`Running ${cli} ${cliOptions.join(' ')}`);
@@ -598,6 +606,25 @@ export default class extends BaseGenerator {
       }
 
       throw error;
+    }
+  }
+
+  /**
+   * Install the `jhipster` cli of `jhipsterVersion` with fly-import, the same installation the formatters are loaded from,
+   * so it is not downloaded again by npx.
+   * Blueprints, custom clis and v7 (which runs with another node) keep using npx.
+   * @returns {Promise<string | undefined>} the cli path, or undefined to use npx.
+   */
+  async installJHipsterCli({ cli, jhipsterVersion, blueprints }) {
+    if (cli !== 'jhipster' || blueprints.length > 0 || this.isV7(jhipsterVersion)) {
+      return undefined;
+    }
+
+    try {
+      return await getGeneratorJHipsterCli(await installGeneratorJHipster(jhipsterVersion));
+    } catch (error) {
+      this.log.warn(`Using npx, could not install JHipster ${jhipsterVersion} with fly-import: ${error.message}`);
+      return undefined;
     }
   }
 
@@ -673,7 +700,53 @@ export default class extends BaseGenerator {
     );
   }
 
+  /**
+   * Prettier and ESLint transforms from the target JHipster version, so every branch is formatted the way the target
+   * version formats, falling back to the bundled version.
+   */
+  async getTargetFormatters() {
+    this.targetFormatters ??= this.loadTargetFormatters();
+    return this.targetFormatters;
+  }
+
+  async loadTargetFormatters() {
+    const bundled = { createPrettierTransform, createESLintTransform };
+    let { targetVersion } = this.blueprintConfig;
+    if (!targetVersion || ['bundled', 'none'].includes(targetVersion)) {
+      return bundled;
+    }
+
+    try {
+      if (targetVersion === 'current') {
+        try {
+          return await importFormatters(this.destinationPath());
+        } catch {
+          // Not installed in the application, install the version it declares.
+          targetVersion = this.getCurrentSourceVersion();
+        }
+      }
+
+      if (this.isV7(targetVersion)) {
+        return bundled;
+      }
+
+      const spinner = this.verbose ? undefined : ora(`loading prettier and eslint from JHipster ${targetVersion}`).start();
+      try {
+        const formatters = await installAndImportFormatters(targetVersion);
+        spinner?.succeed(`loaded prettier and eslint from JHipster ${targetVersion}`);
+        return formatters;
+      } catch (error) {
+        spinner?.fail(`failed to load prettier and eslint from JHipster ${targetVersion}`);
+        throw error;
+      }
+    } catch (error) {
+      this.log.warn(`Using bundled prettier and eslint, could not load them from JHipster ${targetVersion}: ${error.message}`);
+      return bundled;
+    }
+  }
+
   async commit(options, ...transforms) {
+    const { createPrettierTransform, createESLintTransform } = await this.getTargetFormatters();
     await this.pipeline(
       {
         filter: () => false,
