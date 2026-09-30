@@ -663,6 +663,8 @@ export default class extends BaseGenerator {
       transform(
         () => {},
         async function () {
+          // globby is used for its gitignore option: node's glob and tinyglobby don't read .gitignore, and files it
+          // ignores (node_modules, build output) must not be formatted.
           const files = await globby('**/*.{md,json,yml,html,cjs,mjs,js,ts,tsx,css,scss,vue,java}', { gitignore: true });
           for (const file of files) {
             const memFsFile = loadFile(file);
