@@ -53,7 +53,6 @@
     "p-transform": "^5.0.1",
     "parse-gitignore": "^2.0.0",
     "pkg-versions": "^4.0.0",
-    "readable-stream": "^4.7.0",
     "semver": "^7.7.4",
     "simple-git": "^3.33.0",
     "untildify": "^6.0.0"
