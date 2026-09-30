@@ -37,6 +37,7 @@ import {
   V7_NODE,
 } from './constants.js';
 import { normalizeBlueprintName } from './internal/blueprints.js';
+import { importFormatters, installAndImportFormatters } from './internal/formatters.js';
 
 export default class extends BaseGenerator {
   /** @type {boolean} */
@@ -673,7 +674,53 @@ export default class extends BaseGenerator {
     );
   }
 
+  /**
+   * Prettier and ESLint transforms from the target JHipster version, so every branch is formatted the way the target
+   * version formats, falling back to the bundled version.
+   */
+  async getTargetFormatters() {
+    this.targetFormatters ??= this.loadTargetFormatters();
+    return this.targetFormatters;
+  }
+
+  async loadTargetFormatters() {
+    const bundled = { createPrettierTransform, createESLintTransform };
+    let { targetVersion } = this.blueprintConfig;
+    if (!targetVersion || ['bundled', 'none'].includes(targetVersion)) {
+      return bundled;
+    }
+
+    try {
+      if (targetVersion === 'current') {
+        try {
+          return await importFormatters(this.destinationPath());
+        } catch {
+          // Not installed in the application, install the version it declares.
+          targetVersion = this.getCurrentSourceVersion();
+        }
+      }
+
+      if (this.isV7(targetVersion)) {
+        return bundled;
+      }
+
+      const spinner = this.verbose ? undefined : ora(`loading prettier and eslint from JHipster ${targetVersion}`).start();
+      try {
+        const formatters = await installAndImportFormatters(targetVersion);
+        spinner?.succeed(`loaded prettier and eslint from JHipster ${targetVersion}`);
+        return formatters;
+      } catch (error) {
+        spinner?.fail(`failed to load prettier and eslint from JHipster ${targetVersion}`);
+        throw error;
+      }
+    } catch (error) {
+      this.log.warn(`Using bundled prettier and eslint, could not load them from JHipster ${targetVersion}: ${error.message}`);
+      return bundled;
+    }
+  }
+
   async commit(options, ...transforms) {
+    const { createPrettierTransform, createESLintTransform } = await this.getTargetFormatters();
     await this.pipeline(
       {
         filter: () => false,
