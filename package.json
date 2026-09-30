@@ -47,6 +47,8 @@
     "get-node": "^15.0.0",
     "globby": "^14.0.1",
     "latest-version": "^9.0.0",
+    "mem-fs": "^4.1.4 || ^6.0.0",
+    "mem-fs-editor": "^12.0.3",
     "ora": "^9.4.1",
     "p-transform": "^5.0.1",
     "parse-gitignore": "^2.0.0",
@@ -59,6 +61,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
+    "@commitlint/types": "^21.2.3",
     "ejs-lint": "2.0.1",
     "eslint": "10.10.0",
     "eslint-config-prettier": "10.1.8",
