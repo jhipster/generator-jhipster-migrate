@@ -38,6 +38,7 @@ import {
 } from './constants.js';
 import { normalizeBlueprintName } from './internal/blueprints.js';
 import { importFormatters, installAndImportFormatters } from './internal/formatters.js';
+import { getGeneratorJHipsterCli, installGeneratorJHipster } from './internal/generator-jhipster.js';
 
 export default class extends BaseGenerator {
   /** @type {boolean} */
@@ -562,16 +563,22 @@ export default class extends BaseGenerator {
           }
         }
 
-        cliOptions = [
-          '--package',
-          `${GENERATOR_JHIPSTER}@${jhipsterVersion}`,
-          ...blueprints.map(({ name, version }) => ['--package', `${name}@${version}`]).flat(),
-          '--yes',
-          '--',
-          cli,
-          ...cliOptions,
-        ];
-        cli = 'npx';
+        const flyCli = await this.installJHipsterCli({ cli, jhipsterVersion, blueprints });
+        if (flyCli) {
+          cliOptions = [flyCli, ...cliOptions];
+          cli = process.execPath;
+        } else {
+          cliOptions = [
+            '--package',
+            `${GENERATOR_JHIPSTER}@${jhipsterVersion}`,
+            ...blueprints.map(({ name, version }) => ['--package', `${name}@${version}`]).flat(),
+            '--yes',
+            '--',
+            cli,
+            ...cliOptions,
+          ];
+          cli = 'npx';
+        }
       }
 
       this.log.info(`Running ${cli} ${cliOptions.join(' ')}`);
@@ -599,6 +606,25 @@ export default class extends BaseGenerator {
       }
 
       throw error;
+    }
+  }
+
+  /**
+   * Install the `jhipster` cli of `jhipsterVersion` with fly-import, the same installation the formatters are loaded from,
+   * so it is not downloaded again by npx.
+   * Blueprints, custom clis and v7 (which runs with another node) keep using npx.
+   * @returns {Promise<string | undefined>} the cli path, or undefined to use npx.
+   */
+  async installJHipsterCli({ cli, jhipsterVersion, blueprints }) {
+    if (cli !== 'jhipster' || blueprints.length > 0 || this.isV7(jhipsterVersion)) {
+      return undefined;
+    }
+
+    try {
+      return await getGeneratorJHipsterCli(await installGeneratorJHipster(jhipsterVersion));
+    } catch (error) {
+      this.log.warn(`Using npx, could not install JHipster ${jhipsterVersion} with fly-import: ${error.message}`);
+      return undefined;
     }
   }
 

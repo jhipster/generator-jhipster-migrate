@@ -2,12 +2,11 @@ import { createRequire } from 'module';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
 
-import { flyImport } from 'fly-import';
-
 import { GENERATOR_JHIPSTER } from '../constants.js';
 
-const BOOTSTRAP_SUPPORT_SUBPATH = 'generators/bootstrap/support';
-const BOOTSTRAP_SUPPORT = `${GENERATOR_JHIPSTER}/${BOOTSTRAP_SUPPORT_SUBPATH}`;
+import { installGeneratorJHipster } from './generator-jhipster.js';
+
+const BOOTSTRAP_SUPPORT = `${GENERATOR_JHIPSTER}/generators/bootstrap/support`;
 
 const pickFormatters = ({ createPrettierTransform, createESLintTransform }, source) => {
   if (!createPrettierTransform || !createESLintTransform) {
@@ -16,13 +15,6 @@ const pickFormatters = ({ createPrettierTransform, createESLintTransform }, sour
 
   return { createPrettierTransform, createESLintTransform };
 };
-
-/**
- * fly-import spec of a generator-jhipster version.
- * Aliased by version, so every version has its own folder in fly-import's repository instead of replacing the previous one.
- * @param {string} version
- */
-export const getGeneratorJHipsterSpec = version => `${GENERATOR_JHIPSTER}-${version}@npm:${GENERATOR_JHIPSTER}@${version}`;
 
 /**
  * Import `createPrettierTransform` and `createESLintTransform` from the generator-jhipster resolved from `folder`.
@@ -35,10 +27,7 @@ export const importFormatters = async folder => {
 };
 
 /**
- * Install generator-jhipster `version` with fly-import, in its repository outside the application, and import its formatters.
+ * Install generator-jhipster `version` with fly-import, outside the application, and import its formatters.
  * @param {string} version
  */
-export const installAndImportFormatters = async version => {
-  const spec = getGeneratorJHipsterSpec(version);
-  return pickFormatters(await flyImport(spec, { subpath: BOOTSTRAP_SUPPORT_SUBPATH }), spec);
-};
+export const installAndImportFormatters = async version => importFormatters(await installGeneratorJHipster(version));

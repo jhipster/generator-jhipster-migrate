@@ -5,7 +5,8 @@ import { fileURLToPath } from 'url';
 
 import { createESLintTransform, createPrettierTransform } from 'generator-jhipster/generators/bootstrap/support';
 
-import { getGeneratorJHipsterSpec, importFormatters } from './formatters.js';
+import { importFormatters } from './formatters.js';
+import { getGeneratorJHipsterRepository } from './generator-jhipster.js';
 
 describe('formatters', () => {
   it('imports the formatters of the generator-jhipster installed in the folder', async () => {
@@ -17,7 +18,9 @@ describe('formatters', () => {
     await expect(importFormatters(join(tmpdir(), 'jhipster-migrate-not-installed'))).rejects.toThrow();
   });
 
-  it('aliases generator-jhipster by version', () => {
-    expect(getGeneratorJHipsterSpec('9.4.0')).toBe('generator-jhipster-9.4.0@npm:generator-jhipster@9.4.0');
+  it('installs each generator-jhipster version in its repository outside the application', () => {
+    const repository = getGeneratorJHipsterRepository('9.4.0');
+    expect(repository.startsWith(process.cwd())).toBe(false);
+    expect(repository).not.toBe(getGeneratorJHipsterRepository('9.3.0'));
   });
 });
