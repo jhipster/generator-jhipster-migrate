@@ -6,6 +6,8 @@ import { escapeRegExp } from 'lodash-es';
 import simpleGit from 'simple-git';
 import assert from 'yeoman-assert';
 
+import MigrateGenerator from './generator.js';
+
 /**
  * @return {import('simple-git').SimpleGit}
  */
@@ -84,5 +86,18 @@ describe('SubGenerator migrate of migrate JHipster blueprint', () => {
     it('should remove file from updated config', async () => {
       assert.noFile('.lintstagedrc.js');
     });
+  });
+
+  describe('isV7', () => {
+    it.each(['7.6.0', '7.9.3', '7.9.4', '^7.9.4', '~7.9.4', 'v7.9.4'])('returns true for v7 version %s', version => {
+      expect(MigrateGenerator.prototype.isV7(version)).toBe(true);
+    });
+
+    it.each(['8.0.0', '8.9.0', '^8.9.0', '9.4.0', 'bundled', 'current', 'none', undefined])(
+      'returns false for non-v7 version %s',
+      version => {
+        expect(MigrateGenerator.prototype.isV7(version)).toBe(false);
+      },
+    );
   });
 });

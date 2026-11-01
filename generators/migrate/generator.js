@@ -441,10 +441,10 @@ export default class extends BaseGenerator {
 
   get [BaseGenerator.POST_WRITING]() {
     return this.asPostWritingTaskGroup({
-      removeblueprintConfig() {
+      async removeblueprintConfig() {
         if (!this.options.writeblueprintConfig) {
           this.fs.delete(MIGRATE_CONFIG_FILE);
-          this.rmRf(MIGRATE_TMP_FOLDER);
+          await this.rmRf(MIGRATE_TMP_FOLDER);
         }
       },
     });
@@ -492,11 +492,7 @@ export default class extends BaseGenerator {
   async cleanUp() {
     const ignoredFiles = gitignore(await readFile('.gitignore')).patterns ?? [];
     const filesToKeep = ['.yo-rc.json', '.jhipster', 'package.json', 'package-lock.json', 'node_modules', '.git', ...ignoredFiles];
-    (await readdir(this.destinationPath())).forEach(file => {
-      if (!filesToKeep.includes(file)) {
-        this.rmRf(file);
-      }
-    });
+    await Promise.all((await readdir(this.destinationPath())).filter(file => !filesToKeep.includes(file)).map(file => this.rmRf(file)));
     this.log.ok('cleaned up project directory');
   }
 
@@ -558,9 +554,11 @@ export default class extends BaseGenerator {
           jhipsterVersion = this.getCurrentSourceVersion();
           if (this.isV7(jhipsterVersion)) {
             cliOptions = [...cliOptions, ...DEFAULT_CLI_OPTIONS_V7.split(' ')];
-            const { path: nodePath } = await getNode(V7_NODE);
-            spawnCommandOptions = { ...spawnCommandOptions, nodePath, preferLocal: true };
           }
+        }
+        if (this.isV7(jhipsterVersion)) {
+          const { path: nodePath } = await getNode(V7_NODE);
+          spawnCommandOptions = { ...spawnCommandOptions, nodePath, preferLocal: true };
         }
 
         const flyCli = await this.installJHipsterCli({ cli, jhipsterVersion, blueprints });
@@ -588,7 +586,7 @@ export default class extends BaseGenerator {
       await this.spawn(cli, cliOptions, spawnCommandOptions);
 
       const keystore = `${SERVER_MAIN_RES_DIR}config/tls/keystore.p12`;
-      this.rmRf(keystore);
+      await this.rmRf(keystore);
       await this.createGit()
         .add(['.', '--', `:!${MIGRATE_TMP_FOLDER}`])
         .commit(`migration application generated with ${message} (${type})`, ['--allow-empty', '--no-verify']);
@@ -763,7 +761,8 @@ export default class extends BaseGenerator {
   }
 
   isV7(version) {
-    return version.includes('.') && parseInt(version.split('.', 2), 10) < 8;
+    const coerced = semver.coerce(version);
+    return Boolean(coerced && semver.major(coerced) < 8);
   }
 
   async cleanupBranch(branch) {
